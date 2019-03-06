@@ -84,7 +84,10 @@ typedef struct {
 uint64_t fault_getFaultSummary();
 
 
-
+/**
+ * Asserts the fault, with the specified data
+ */
+void fault_assert(uint32_t ui32FaultNum, tFaultData uData);
 
 #endif /* FAULT_H_ */
 
