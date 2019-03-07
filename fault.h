@@ -89,6 +89,11 @@ uint64_t fault_getFaultSummary();
  */
 void fault_assert(uint32_t ui32FaultNum, tFaultData uData);
 
+/**
+ * Deasserts the fault from the system
+ */
+void fault_deassert(uint32_t ui32FaultNum);
+
 #endif /* FAULT_H_ */
 
 
