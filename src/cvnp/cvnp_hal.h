@@ -16,13 +16,15 @@
 #include <stdint.h>
 
 typedef struct {
+    uint8_t ide : 1;
+    uint8_t rtr : 1;
+    uint8_t dlc : 4;
+} tCanHeader;
+
+typedef struct {
     uint32_t id;
-    struct {
-        uint8_t ide : 1;
-        uint8_t rtr : 1;
-        uint8_t dlc : 4;
-    } header;
-    uint8_t[8] data;
+    tCanHeader head;
+    uint8_t data[8];
 } tCanFrame;
 
 
