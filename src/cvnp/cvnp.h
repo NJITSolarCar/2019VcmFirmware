@@ -52,10 +52,9 @@ typedef struct {
  */
 typedef struct {
     uint32_t valid : 1; // Set automatically by the CVNP dispatcher. 1 if this is a live handler, 0 otherwise
+    uint32_t timeout : 31; // Time in ms to keep this active before it is killed. Set to 0 to disable timeouts.
     uint32_t id;
     uint32_t lastRun;
-    uint32_t timeout : 30;
-    uint32_t hasTimeout : 1;
     void (*pfnProcFrame)(tCanFrame *frame);
     void (*pfnOnDeath)(bool wasKilled);
 } tNonCHandler;
@@ -69,8 +68,8 @@ typedef struct {
  */
 typedef struct {
 	uint32_t valid : 1; // Set automatically by the CVNP dispatcher. 1 if this is a live handler, 0 otherwise
-    tCompliantId id;                        // The Query that was sent with this handler
-    uint32_t timeToLive : 31;              	// Time in ms to keep this active before it is killed
+	uint32_t timeToLive : 31;              	// Time in ms to keep this active before it is killed. Set to 0 to disable timeouts.
+	tCompliantId id;                        // The Query that was sent with this handler
     uint32_t submittedAt;                 	// Time in ms that the query was executed
     void (*pfnProcFrame)(tCanFrame *frame); // function to be called on a hit
     void (*pfnOnDeath)(bool wasKilled);    	// function to be called when this handler either times out or is kicked from the buffer
@@ -86,10 +85,10 @@ typedef struct {
 typedef struct {
 	 uint32_t valid : 1; // Set automatically by the CVNP dispatcher. 1 if this is a live handler, 0 otherwise
      tCompliantId id;                        	// The broadcast to listen on. Only looks at SCLS and DDEF.
-     uint32_t timeToLive : 31;             		// Time in ms to keep this active before it is killed
+     uint32_t timeout : 31;						// minimum time between matching frames that causes the onTimeout function to run. Set to 0 to ignore timeouts.
      uint32_t lastRun;                 			// Time in ms that the broadcast was last received
      void (*pfnProcFrame)(tCanFrame *frame); 	// function to be called on a hit
-     void (*pfnOnDeath)(bool wasKilled);    	// function to be called when this handler either times out or is kicked from the buffer
+     void (*pfnOnTimeout)(void);    			// function to be called when this handler either times out or is kicked from the buffer
 } tBroadHandler;
 
 
@@ -131,7 +130,7 @@ void cvnp_procFrame(tCanFrame *frame);
  * Tick routine that should be called periodically by the HAL. Every
  * 10-50ms is a good time to use.
  */
-void cvnp_tick(uint32_t ui32Now);
+void cvnp_tick(uint32_t now);
 
 
 /**

@@ -236,15 +236,72 @@ void cvnp_procFrame(tCanFrame *frame) {
 	}
 
 	// Is a non-compliant frame
-	else {
-		hit = _cvnp_handleNonC(frame, now);
+	else if(!_cvnp_handleNonC(frame, now)) {
+		// TODO: the frame wasn't found, assert an error
 	}
 }
 
 
 
+/**
+ * Internal CVNP periodic tick routine. This is to be used primarily for
+ * checking for timeouts on differnt handler routines. If any are found,
+ * this will run the onTimeout routine and kick it from the buffer if
+ * necessary.
+ */
+void cvnp_tick(uint32_t now) {
+	tBroadHandler *tmpBroad;
+	tQueryHandler *tmpQuery;
+	tNonCHandler *tmpNonC;
+	bool timeout;
 
+	// Check for any valid handlers that are supposed to time
+	// out that have timed out. If found, reset the
+	// run timer and run the onTimeout function
+	for(int i=0; i<CVNP_BROADCAST_BUF_SIZE; i++) {
+		tmpBroad = &g_pBroadcastTable[i];
+		timeout = tmpBroad->valid && tmpBroad->timeout &&
+				now - tmpBroad->lastRun > tmpBroad->timeout;
+		if(timeout) {
+			tmpBroad->lastRun = now;
+			tmpBroad->pfnOnTimeout();
+		}
+	}
 
+	// Same thing for std query buffer, but remove from the buffer and
+	// don't bother resetting the timer
+	for(int i=0; i<CVNP_STD_QUERY_BUF_SIZE; i++) {
+		tmpQuery = &g_pStdQueryTable[i];
+		timeout = tmpQuery->valid && tmpQuery->timeToLive &&
+				now - tmpQuery->submittedAt > tmpQuery->timeToLive;
+		if(timeout) {
+			tmpQuery->valid = false;
+			tmpQuery->pfnOnDeath(false);
+		}
+	}
+
+	// Same as std query buffer for multicast response buffer
+	for(int i=0; i<CVNP_MULTICAST_BUF_SIZE; i++) {
+		tmpQuery = &g_pMulticastTable[i];
+		timeout = tmpQuery->valid && tmpQuery->timeToLive &&
+				now - tmpQuery->submittedAt > tmpQuery->timeToLive;
+		if(timeout) {
+			tmpQuery->valid = false;
+			tmpQuery->pfnOnDeath(false);
+		}
+	}
+
+	// Same as for broadcast buffer
+	for(int i=0; i<CVNP_NONCOMPLIANT_BUF_SIZE; i++) {
+		tmpNonC = &g_pNonCTable[i];
+		timeout = tmpNonC->valid && tmpNonC->timeout &&
+				now - tmpNonC->lastRun > tmpNonC->timeout;
+		if(timeout) {
+			tmpNonC->lastRun = now;
+			tmpNonC->pfnOnDeath(false);
+		}
+	}
+}
 
 
 
