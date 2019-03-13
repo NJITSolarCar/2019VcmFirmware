@@ -18,6 +18,18 @@
 // Buffer and table sizes
 #define CVNP_NUM_DDEF                           128 // Number of DDEFs in the protocol
 
+// Standard DDEFS
+#define CVNP_DDEF_ERROR							0
+#define CVNP_DDEF_DEVINFO						1
+#define CVNP_DDEF_DEVNAME						2
+#define CVNP_DDEF_DEVVER						3
+#define CVNP_DDEF_RESET							4
+
+// Magic constant for a reset frame. The data must match this exactly
+// in order for that frame to be recognized and a reset to be performed.
+// This is to prevent accidental resets.
+#define CVNP_RESET_MAGIC						0x06D3BAAE
+
 /**
  * Represents a CVNP compliant frame ID. Note that the ordering
  * of these elements is not defined, so they cannot be directly mapped
@@ -39,9 +51,10 @@ typedef struct {
  * Handler for noncompliant frames on the bus.
  */
 typedef struct {
+    uint32_t valid : 1; // Set automatically by the CVNP dispatcher. 1 if this is a live handler, 0 otherwise
     uint32_t id;
     uint32_t lastRun;
-    uint32_t timeout : 31;
+    uint32_t timeout : 30;
     uint32_t hasTimeout : 1;
     void (*pfnProcFrame)(tCanFrame *frame);
     void (*pfnOnDeath)(bool wasKilled);
@@ -55,8 +68,9 @@ typedef struct {
  * the timeToLive expires.
  */
 typedef struct {
+	uint32_t valid : 1; // Set automatically by the CVNP dispatcher. 1 if this is a live handler, 0 otherwise
     tCompliantId id;                        // The Query that was sent with this handler
-    uint32_t timeToLive;                	// Time in ms to keep this active before it is killed
+    uint32_t timeToLive : 31;              	// Time in ms to keep this active before it is killed
     uint32_t submittedAt;                 	// Time in ms that the query was executed
     void (*pfnProcFrame)(tCanFrame *frame); // function to be called on a hit
     void (*pfnOnDeath)(bool wasKilled);    	// function to be called when this handler either times out or is kicked from the buffer
@@ -70,8 +84,9 @@ typedef struct {
  * the timeToLive expires.
  */
 typedef struct {
+	 uint32_t valid : 1; // Set automatically by the CVNP dispatcher. 1 if this is a live handler, 0 otherwise
      tCompliantId id;                        	// The broadcast to listen on. Only looks at SCLS and DDEF.
-     uint32_t timeToLive;                		// Time in ms to keep this active before it is killed
+     uint32_t timeToLive : 31;             		// Time in ms to keep this active before it is killed
      uint32_t submittedAt;                 		// Time in ms that the query was executed
      void (*pfnProcFrame)(tCanFrame *frame); 	// function to be called on a hit
      void (*pfnOnDeath)(bool wasKilled);    	// function to be called when this handler either times out or is kicked from the buffer
