@@ -41,9 +41,9 @@ void cvnpHal_sendFrame(tCanFrame frame);
 
 
 /**
- * Tick routine that should be called periodically
+ * Returns the current system timestamp, in ms
  */
-void cvnpHal_tick(uint32_t ui32Now);
+uint32_t cvnpHal_now();
 
 #endif /* CVNP_CVNP_HAL_H_ */
 

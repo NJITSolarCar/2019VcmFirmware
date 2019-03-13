@@ -87,7 +87,7 @@ typedef struct {
 	 uint32_t valid : 1; // Set automatically by the CVNP dispatcher. 1 if this is a live handler, 0 otherwise
      tCompliantId id;                        	// The broadcast to listen on. Only looks at SCLS and DDEF.
      uint32_t timeToLive : 31;             		// Time in ms to keep this active before it is killed
-     uint32_t submittedAt;                 		// Time in ms that the query was executed
+     uint32_t lastRun;                 			// Time in ms that the broadcast was last received
      void (*pfnProcFrame)(tCanFrame *frame); 	// function to be called on a hit
      void (*pfnOnDeath)(bool wasKilled);    	// function to be called when this handler either times out or is kicked from the buffer
 } tBroadHandler;
@@ -126,6 +126,14 @@ void cvnp_query(tQueryInfo *info, uint32_t len, uint8_t *pData);
  */
 void cvnp_procFrame(tCanFrame *frame);
 
+
+/**
+ * Tick routine that should be called periodically by the HAL. Every
+ * 10-50ms is a good time to use.
+ */
+void cvnp_tick(uint32_t ui32Now);
+
+
 /**
  * Starts the CVNP system on this device. This will automatically call the
  * HAL initialization. Returns a zero value on success, nonzero otherwise.
@@ -144,6 +152,7 @@ inline tCompliantId cvnp_idToStruct(uint32_t id);
  * Converts an ID structure to an integer ID
  */
 inline uint32_t cvnp_structToId(tCompliantId *id);
+
 
 
 /**

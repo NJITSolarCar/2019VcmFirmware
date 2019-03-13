@@ -55,9 +55,9 @@ static uint8_t g_myInst;
 static inline void _cvnp_runDdefhandler(tCanFrame *frame, tCompliantId id) {
 	tCanFrame newFrame;
 
-	if(!g_pfnDdefTable[id.ddef]) {
-		// TODO: handle null ddef handler here
-	}
+	// No handler is set for this DDEF, so respond with the error handler instead
+	if(!g_pfnDdefTable[id.ddef])
+		id.ddef = CVNP_DDEF_ERROR;
 
 	// Need to use specific len variable because you can't take a pointer
 	// to a bitfield
@@ -86,6 +86,7 @@ static inline void _cvnp_runDdefhandler(tCanFrame *frame, tCompliantId id) {
  */
 void cvnp_procFrame(tCanFrame *frame) {
 	tCompliantId id = cvnp_idToStruct(frame->id);
+	uint32_t now = cvnpHal_now();
 
 	// True if the noncompliant bit is set or the frame uses an 11-bit (standard) id
 	bool isCompliant = !id.nonc || !frame->head.ide;
@@ -103,10 +104,16 @@ void cvnp_procFrame(tCanFrame *frame) {
 			// For now this uses a linear search, as there probably won't
 			// be enough broadcast handlers to justify the effort of a
 			// binary search. In the future this may change, or different
-			// implementations be selectable via preprocessor commands
+			// implementations be selectable via preprocessor commands.
 			bool hit = false;
 			for(int i=0; i<CVNP_BROADCAST_BUF_SIZE; i++) {
-
+				// hit if valid, with matching scls and ddef
+				hit = g_pBroadcastTable[i].valid &&
+						g_pBroadcastTable[i].id.scls == id.scls &&
+						g_pBroadcastTable[i].id.ddef == id.ddef;
+				if(hit)
+					g_pBroadcastTable[i].lastRun = cvnpHal_now();
+					g_pBroadcastTable[i].pfnProcFrame(frame);
 			}
 		}
 	}
