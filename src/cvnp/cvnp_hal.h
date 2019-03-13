@@ -29,9 +29,9 @@ typedef struct {
 
 
 /**
- * Initializes the bus hardware
+ * Initializes the bus hardware. Returns true if successful
  */
-void cvnpHal_init();
+bool cvnpHal_init();
 
 
 /**

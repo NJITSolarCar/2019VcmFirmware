@@ -134,10 +134,13 @@ void cvnp_tick(uint32_t now);
 
 
 /**
- * Starts the CVNP system on this device. This will automatically call the
- * HAL initialization. Returns a zero value on success, nonzero otherwise.
+ * Starts the CVNP system on this device. This should be called after setting up
+ * broadcast and nonC handlers and initializing the DDEF table. This will clear
+ * the multicast and standard query buffer. This will automatically call the
+ * HAL initialization, and if successful begin listening and operating.
+ * Returns true on success, false otherwise.
  */
-uint32_t cvnp_start(uint32_t myClass, uint32_t myInst);
+bool cvnp_start(uint32_t myClass, uint32_t myInst);
 
 
 

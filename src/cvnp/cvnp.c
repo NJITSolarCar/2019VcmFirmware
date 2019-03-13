@@ -45,8 +45,8 @@ static tNonCHandler g_pNonCTable[CVNP_NONCOMPLIANT_BUF_SIZE];
 
 
 // This device's class and instance number
-static uint8_t g_myClass;
-static uint8_t g_myInst;
+static uint32_t g_myClass;
+static uint32_t g_myInst;
 
 
 
@@ -187,6 +187,29 @@ static bool _cvnp_handleNonC(tCanFrame *frame, uint32_t now) {
 	}
 
 	return hit;
+}
+
+
+
+/**
+ * Main init routine. Saves our class / instance info, binds common handlers,
+ * resets the multicast / standard query buffers, binds common ddefs, and
+ * initializes HAL.
+ */
+bool cvnp_start(uint32_t myClass, uint32_t myInst) {
+	g_myClass = myClass;
+	g_myInst = myInst;
+
+	// TODO: Write common handler routines to attach here
+
+	// clear buffers
+	for(int i=0; i<CVNP_MULTICAST_BUF_SIZE; i++)
+		g_pMulticastTable[i].valid = false;
+
+	for(int i=0; i<CVNP_STD_QUERY_BUF_SIZE; i++)
+		g_pStdQueryTable[i].valid = false;
+
+	return cvnpHal_init();
 }
 
 
