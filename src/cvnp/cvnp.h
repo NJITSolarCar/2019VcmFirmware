@@ -1,7 +1,8 @@
 /*
  * cvnp.h
  *
- * Contains the interface for the CVNP protocol.
+ * Contains the interface for the CVNP protocol. The functions here are what should be called
+ * by application code to participate in the protocol.
  *
  *  Created on: Mar 6, 2019
  *      Author: Duemmer
@@ -23,13 +24,13 @@
  * to the bits of an integer ID.
  */
 typedef struct {
-    uint32_t broad : 1;
-    uint32_t nonc : 1;
-    uint32_t scls : 6;
-    uint32_t sinst : 4;
-    uint32_t rcls : 6;
-    uint32_t rinst : 4;
-    uint32_t ddef : 7;
+    uint32_t broad 	: 1;
+    uint32_t nonc 	: 1;
+    uint32_t scls 	: 6;
+    uint32_t sinst 	: 4;
+    uint32_t rcls 	: 6;
+    uint32_t rinst 	: 4;
+    uint32_t ddef 	: 7;
 } tCompliantId;
 
 
@@ -38,12 +39,12 @@ typedef struct {
  * Handler for noncompliant frames on the bus.
  */
 typedef struct {
-    uint32_t ui32Id;
-    uint32_t ui32LastRun;
-    uint32_t ui32Timeout : 31;
-    uint32_t bHasTimeout : 1;
+    uint32_t id;
+    uint32_t lastRun;
+    uint32_t timeout : 31;
+    uint32_t hasTimeout : 1;
     void (*pfnProcFrame)(tCanFrame *frame);
-    void (*pfnOnDeath)(bool bWasKilled);
+    void (*pfnOnDeath)(bool wasKilled);
 } tNonCHandler;
 
 
@@ -55,10 +56,10 @@ typedef struct {
  */
 typedef struct {
     tCompliantId id;                        // The Query that was sent with this handler
-    uint32_t ui32TimeToLive;                // Time in ms to keep this active before it is killed
-    uint32_t ui32Submitted;                 // Time in ms that the query was executed
+    uint32_t timeToLive;                	// Time in ms to keep this active before it is killed
+    uint32_t submittedAt;                 	// Time in ms that the query was executed
     void (*pfnProcFrame)(tCanFrame *frame); // function to be called on a hit
-    void (*pfnOnDeath)(bool bWasKilled);    // function to be called when this handler either times out or is kicked from the buffer
+    void (*pfnOnDeath)(bool wasKilled);    	// function to be called when this handler either times out or is kicked from the buffer
 } tQueryHandler;
 
 
@@ -69,11 +70,11 @@ typedef struct {
  * the timeToLive expires.
  */
 typedef struct {
-     tCompliantId id;                        // The broadcast to listen on. Only looks at SCLS and DDEF.
-     uint32_t ui32TimeToLive;                // Time in ms to keep this active before it is killed
-     uint32_t ui32Submitted;                 // Time in ms that the query was executed
-     void (*pfnProcFrame)(tCanFrame *frame); // function to be called on a hit
-     void (*pfnOnDeath)(bool bWasKilled);    // function to be called when this handler either times out or is kicked from the buffer
+     tCompliantId id;                        	// The broadcast to listen on. Only looks at SCLS and DDEF.
+     uint32_t timeToLive;                		// Time in ms to keep this active before it is killed
+     uint32_t submittedAt;                 		// Time in ms that the query was executed
+     void (*pfnProcFrame)(tCanFrame *frame); 	// function to be called on a hit
+     void (*pfnOnDeath)(bool wasKilled);    	// function to be called when this handler either times out or is kicked from the buffer
 } tBroadHandler;
 
 
@@ -85,17 +86,23 @@ typedef struct {
     uint32_t rcls : 6;
     uint32_t rinst : 4;
     uint32_t ddef : 7;
-    uint32_t ui32Timeout : 31;
-    uint32_t bDoesTimeOut : 1;
+    uint32_t timeout : 31;
+    uint32_t doesTimeOut : 1;
     void (*pfnProcFrame)(tCanFrame *frame); // function to be called on a hit
-    void (*pfnOnDeath)(bool bWasKilled);    // function to be called when this handler either times out or is kicked from the buffer
+    void (*pfnOnDeath)(bool wasKilled);    	// function to be called when this handler either times out or is kicked from the buffer
 } tQueryInfo;
 
 
 /**
- * Sends a query on the bus
+ * Sends a compliant query on the bus. This will add the given handlers to the query
+ * handler buffer, format a can frame with the requisite ID and the given data, and send it
+ * out. When a frame is received that matches the request to this request, the handler will
+ * be invoked and passed that data. If a timeout period passes before a response is
+ * received or the handler is kicked from the buffer (normally due to insufficient buffer
+ * size), the onTimeput handler will be called, with an indication if it was killed or just
+ * timed out.
  */
-void cvnp_query(tQueryInfo *info, uint32_t ui32Len, uint8_t data[8]);
+void cvnp_query(tQueryInfo *info, uint32_t len, uint8_t *pData);
 
 
 /**
@@ -108,14 +115,14 @@ void cvnp_procFrame(tCanFrame *frame);
  * Starts the CVNP system on this device. This will automatically call the
  * HAL initialization. Returns a zero value on success, nonzero otherwise.
  */
-uint32_t cvnp_start(uint32_t ui32MyClass, uint32_t ui32MyInst);
+uint32_t cvnp_start(uint32_t myClass, uint32_t myInst);
 
 
 
 /**
  * Converts an integer ID to an ID structure with the bits broken out.
  */
-inline tCompliantId cvnp_idToStruct(uint32_t ui32Id);
+inline tCompliantId cvnp_idToStruct(uint32_t id);
 
 
 /**
@@ -130,7 +137,7 @@ inline uint32_t cvnp_structToId(tCompliantId *id);
  */
 void cvnp_registerBroadHandler(tBroadHandler *handler);
 void cvnp_registerNonCHandler(tNonCHandler *handler);
-void cvnp_registerDdefHandler(uint32_t ui32Ddef, void (*pfnHandler)(tCanFrame *frame));
+void cvnp_registerDdefHandler(uint32_t ddef, void (*pfnHandler)(tCanFrame *frame));
 
 #endif /* CVNP_CVNP_H_ */
 
