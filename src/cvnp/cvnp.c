@@ -15,9 +15,10 @@
 
 /**
  * Table of DDEF request handlers. Each entry in this table
- * corresponds to one handler for one ddef.
+ * corresponds to one handler for one ddef. Each function
+ * returns true if the data in pData should be sent out as a response
  */
-static bool (*g_pfnDdefTable[CVNP_NUM_DDEF])(tCanFrame *frame, uint32_t *pLen, uint8_t (*pData)[8]);
+static bool (*g_pfnDdefTable[CVNP_NUM_DDEF])(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]);
 
 /**
  * Table of current multicast response handlers registered to
@@ -50,6 +51,61 @@ static uint32_t g_myInst;
 
 
 
+// =================== STANDARD DDEF HANDLERS ==========================
+
+/**
+ * DDEF handler for an error frame response. See the CVNP spec for
+ * details on this handler's behavior. Will always return true.
+ */
+static bool _cvnp_errorFrameHandler(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+	tCompliantId id = cvnp_idToStruct(frame->id);
+
+	// pLen is the min of 8 and the input frame dlc + 3
+	if(frame->head.dlc < 5)
+		*pLen = frame->head.dlc + 3;
+	else
+		*pLen = 8;
+
+	pData[0] = CVNP_ERROR_CONST;
+	pData[1] = id.ddef;
+	pData[2] = frame->head.dlc;
+	pData[3] = frame->data[0];
+	pData[4] = frame->data[1];
+	pData[5] = frame->data[2];
+	pData[6] = frame->data[3];
+	pData[7] = frame->data[4];
+	pData[8] = frame->data[5];
+
+	return true;
+}
+
+
+/**
+ * DDEF handler for device info response. Responds with device class and info
+ * in bytes 0 and 1 respectively.
+ */
+static bool _cvnp_devinfoFrameHandler(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+	*pLen = 2;
+	pData[0] = g_myClass;
+	pData[1] = g_myInst;
+
+	return true;
+}
+
+
+
+/**
+ * DDEF handler for a reset frame. If the magic constant is correct, this will trigger
+ * a device reset, via the cvnpHal_resetSystem() function. Else, it will do nothing.
+ */
+static bool _cvnp_resetFrameHandler(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+	if(*((uint64_t *)(frame->data)) == CVNP_RESET_MAGIC)
+		cvnpHal_resetSystem();
+	return false;
+}
+
+
+
 
 /**
  * Dispatches a DDEF handler, while providing the simple calling interface
@@ -65,7 +121,7 @@ static inline void _cvnp_runDdefhandler(tCanFrame *frame, tCompliantId id) {
 	// Need to use specific len variable because you can't take a pointer
 	// to a bitfield
 	uint32_t len;
-	if((*g_pfnDdefTable[id.ddef])(frame, &len, &newFrame.data)) {
+	if((*g_pfnDdefTable[id.ddef])(frame, &len, newFrame.data)) {
 		newFrame.head.dlc = len;
 
 		// move around the ID so it points back to whoever sent this request
@@ -170,6 +226,8 @@ static bool _cvnp_handleMulticast(tCanFrame *frame, tCompliantId id) {
 
 
 
+
+
 /**
  * Searches the noncompliant handler table for a handler matching
  * this ID. If one is found, its handler is executed and timer reset.
@@ -190,6 +248,10 @@ static bool _cvnp_handleNonC(tCanFrame *frame, uint32_t now) {
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+////////////////////////// MAIN  INTERFACE FUNCTIONS //////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
 
 /**
  * Main init routine. Saves our class / instance info, binds common handlers,
@@ -200,7 +262,10 @@ bool cvnp_start(uint32_t myClass, uint32_t myInst) {
 	g_myClass = myClass;
 	g_myInst = myInst;
 
-	// TODO: Write common handler routines to attach here
+	// Common frame binding
+	g_pfnDdefTable[CVNP_DDEF_ERROR] = &_cvnp_errorFrameHandler;
+	g_pfnDdefTable[CVNP_DDEF_RESET] = &_cvnp_resetFrameHandler;
+	g_pfnDdefTable[CVNP_DDEF_DEVINFO] = &_cvnp_devinfoFrameHandler;
 
 	// clear buffers
 	for(int i=0; i<CVNP_MULTICAST_BUF_SIZE; i++)

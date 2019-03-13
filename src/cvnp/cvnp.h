@@ -25,6 +25,9 @@
 #define CVNP_DDEF_DEVVER						3
 #define CVNP_DDEF_RESET							4
 
+// Error constant byte for the error frame response
+#define CVNP_ERROR_CONST                        0xD8
+
 // Magic constant for a reset frame. The data must match this exactly
 // in order for that frame to be recognized and a reset to be performed.
 // This is to prevent accidental resets.

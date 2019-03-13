@@ -45,6 +45,13 @@ void cvnpHal_sendFrame(tCanFrame frame);
  */
 uint32_t cvnpHal_now();
 
+
+/**
+ * Performs a system level reset, as requested by the RESET ddef. This
+ * reset should be a system-wide reset, though this isn't required.
+ */
+void cvnpHal_resetSystem();
+
 #endif /* CVNP_CVNP_HAL_H_ */
 
 
