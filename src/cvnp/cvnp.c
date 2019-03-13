@@ -48,6 +48,9 @@ static tNonCHandler g_pNonCTable[CVNP_NONCOMPLIANT_BUF_SIZE];
 static uint8_t g_myClass;
 static uint8_t g_myInst;
 
+
+
+
 /**
  * Dispatches a DDEF handler, while providing the simple calling interface
  * offered to the handler.
@@ -78,6 +81,117 @@ static inline void _cvnp_runDdefhandler(tCanFrame *frame, tCompliantId id) {
 }
 
 
+/**
+ * Searches the broadcast handler table for a match to this ID. If
+ * one is found, its handler is executed and timer reset. This only
+ * looks at the scls and ddef portions of id.
+ */
+static bool _cvnp_handleBroadcast(tCanFrame *frame, tCompliantId id, uint32_t now) {
+	// For now this uses a linear search, as there probably won't
+	// be enough broadcast handlers to justify the effort of a
+	// binary search. In the future this may change, or different
+	// implementations be selectable via preprocessor commands.
+	bool hit = false;
+	tBroadHandler *pTmpHandler;
+	for(int i=0; i<CVNP_BROADCAST_BUF_SIZE; i++) {
+		pTmpHandler = &g_pBroadcastTable[i];
+
+		// hit if valid, with matching scls and ddef
+		hit = pTmpHandler->valid &&
+				pTmpHandler->id.scls == id.scls &&
+				pTmpHandler->id.ddef == id.ddef;
+		if(hit) {
+			pTmpHandler->lastRun = now;
+			pTmpHandler->pfnProcFrame(frame);
+			break;
+		}
+	}
+
+	return hit;
+}
+
+
+
+/**
+ * Searches the standard handler table for a handler matching
+ * this ID. If one is found, its handler is executed and timer reset.
+ * This only looks at the scls, sinst and ddef portions of id.
+ */
+static bool _cvnp_handleStdResp(tCanFrame *frame, tCompliantId id) {
+	bool hit = false;
+	tQueryHandler *pTmpHandler;
+	for(int i=0; i<CVNP_STD_QUERY_BUF_SIZE; i++) {
+		pTmpHandler = &g_pStdQueryTable[i];
+
+		// hit if valid with matching scls, sinst, and ddef
+		hit = pTmpHandler->valid &&
+				pTmpHandler->id.scls == id.scls &&
+				pTmpHandler->id.sinst == id.sinst &&
+				pTmpHandler->id.ddef == id.ddef;
+		if(hit) {
+			// Free and execute the handler; its job is done
+			pTmpHandler->valid = 0;
+			pTmpHandler->pfnProcFrame(frame);
+			break;
+		}
+	}
+
+	return hit;
+}
+
+
+
+
+/**
+ * Searches the multicast handler table for a handler matching
+ * this ID. If one is found, its handler is executed.
+ * This only looks at the scls, sinst and ddef portions of id.
+ */
+static bool _cvnp_handleMulticast(tCanFrame *frame, tCompliantId id) {
+	bool hit = false;
+	tQueryHandler *pTmpHandler;
+	for(int i=0; i<CVNP_MULTICAST_BUF_SIZE; i++) {
+		pTmpHandler = &g_pMulticastTable[i];
+
+		// hit if valid with matching scls, sinst, and ddef
+		hit = pTmpHandler->valid &&
+				pTmpHandler->id.scls == id.scls &&
+				pTmpHandler->id.sinst == id.sinst &&
+				pTmpHandler->id.ddef == id.ddef;
+		if(hit) {
+			// Execute but don't free the handler; it can be reused
+			pTmpHandler->pfnProcFrame(frame);
+			break;
+		}
+	}
+
+	return hit;
+}
+
+
+
+/**
+ * Searches the noncompliant handler table for a handler matching
+ * this ID. If one is found, its handler is executed and timer reset.
+ * This checks for equality of IDs directly.
+ */
+static bool _cvnp_handleNonC(tCanFrame *frame, uint32_t now) {
+	bool hit = false;
+	for(int i=0; i<CVNP_NONCOMPLIANT_BUF_SIZE; i++) {
+		hit = g_pNonCTable[i].valid && frame->id == g_pNonCTable[i].id;
+		if(hit) {
+			// Reset timer, call the handler
+			g_pNonCTable[i].lastRun = now;
+			g_pNonCTable[i].pfnProcFrame(frame);
+		}
+	}
+
+	return hit;
+}
+
+
+
+
 
 /**
  * Processes an incoming frame for use in the CVNP system. This function
@@ -87,6 +201,7 @@ static inline void _cvnp_runDdefhandler(tCanFrame *frame, tCompliantId id) {
 void cvnp_procFrame(tCanFrame *frame) {
 	tCompliantId id = cvnp_idToStruct(frame->id);
 	uint32_t now = cvnpHal_now();
+	bool hit = false;
 
 	// True if the noncompliant bit is set or the frame uses an 11-bit (standard) id
 	bool isCompliant = !id.nonc || !frame->head.ide;
@@ -100,22 +215,29 @@ void cvnp_procFrame(tCanFrame *frame) {
 	if(isCompliant && isForMe) {
 		if(frame->head.rtr)
 			_cvnp_runDdefhandler(frame, id);
-		else if(id.broad) {
-			// For now this uses a linear search, as there probably won't
-			// be enough broadcast handlers to justify the effort of a
-			// binary search. In the future this may change, or different
-			// implementations be selectable via preprocessor commands.
-			bool hit = false;
-			for(int i=0; i<CVNP_BROADCAST_BUF_SIZE; i++) {
-				// hit if valid, with matching scls and ddef
-				hit = g_pBroadcastTable[i].valid &&
-						g_pBroadcastTable[i].id.scls == id.scls &&
-						g_pBroadcastTable[i].id.ddef == id.ddef;
-				if(hit)
-					g_pBroadcastTable[i].lastRun = cvnpHal_now();
-					g_pBroadcastTable[i].pfnProcFrame(frame);
-			}
+		else if(id.broad)
+			_cvnp_handleBroadcast(frame, id, now);
+
+		// If none of the above, then it's probably a response to our own request
+		else {
+			// Check for a standard then multicast if a standard handler isn't found
+			hit = _cvnp_handleStdResp(frame, id);
+			if(!hit)
+				hit = _cvnp_handleMulticast(frame, id);
+
+			// If there still wasn't a hit, there must be an error. This
+			// shouldn't happen in the protocol. In all likelihood, this
+			// will occur if either an unsolicited frame is sent here, there
+			// is another device with the same class and instance, or a
+			// response was sent after a timeout period.
+
+			// TODO: handle this error condition
 		}
+	}
+
+	// Is a non-compliant frame
+	else {
+		hit = _cvnp_handleNonC(frame, now);
 	}
 }
 
