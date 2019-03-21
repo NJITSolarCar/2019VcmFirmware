@@ -557,6 +557,97 @@ bool cvnp_registerDdefHandler(uint32_t ddef, void (*pfnHandler)(tCanFrame *frame
 
 
 
+/**
+ * Sends a compliant query on the bus. This will add the given handlers to the query
+ * handler buffer, format a can frame with the requisite ID and the given data, and send it
+ * out. When a frame is received that matches the request to this request, the handler will
+ * be invoked and passed that data. If a timeout period passes before a response is
+ * received or the handler is kicked from the buffer (normally due to insufficient buffer
+ * size), the onTimeput handler will be called, with an indication if it was killed or just
+ * timed out.
+ */
+void cvnp_query(tQueryInfo *info, uint32_t len, uint8_t *pData){
+	// Build the handler. We have to swap the sender / receiver data for this
+	tQueryHandler hdl;
+	hdl.valid = true;
+	hdl.submittedAt = cvnpHal_now();
+	hdl.timeToLive = info->doesTimeOut ? info->timeout : 0;
+	hdl.id.scls = info->rcls;
+	hdl.id.sinst = info->rinst;
+	hdl.id.ddef = info->ddef;
+	hdl.pfnOnDeath = info->pfnOnDeath;
+	hdl.pfnProcFrame = info->pfnProcFrame;
+
+	// Build the id to use on the transmission
+	tCompliantId id;
+	id.broad = false;
+	id.nonc = false;
+	id.scls = g_myClass;
+	id.sinst = g_myInst;
+	id.rcls = info->rcls;
+	id.rinst = info->rinst;
+	id.ddef = info->ddef;
+
+	// Build the frame
+	tCanFrame frame;
+	frame.id = cvnp_structToId(id);
+	frame.head.dlc = len;
+	frame.head.ide = true;
+	frame.head.rtr = true;
+	for(int i=0; i<len; i++)
+		frame.data[i] = pData[i];
+
+
+	// Select the correct buffer and limit
+	bool isMulti = !info->rcls || !info->rinst; // true if either are 0
+	tQueryHandler *bufBase = isMulti ? g_pMulticastTable : g_pStdQueryTable;
+	uint32_t bufLimit = isMulti ? CVNP_MULTICAST_BUF_SIZE : CVNP_STD_QUERY_BUF_SIZE;
+
+	// Find a spot in the correct buffer to add this handler
+	bool added = false; // if true, was added to a buffer already
+	for(int i=0; i<bufLimit; i++) {
+		if(!bufBase[i].valid) {// empty slot, just add
+			bufBase[i] = hdl;
+			added = true;
+		}
+	}
+	if (!added) { // No open slots, kick out the oldest handler
+		uint32_t oldIdx = 0;
+		for(int i=0; i<bufLimit; i++) {
+			if(bufBase[i].submittedAt < bufBase[oldIdx].submittedAt)
+				oldIdx = i;
+		}
+		bufBase[oldIdx].pfnOnDeath(true);
+		bufBase[oldIdx] = hdl;
+	}
+
+	// Handlers should be in order, so transmit the frame
+	cvnpHal_sendFrame(frame);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
