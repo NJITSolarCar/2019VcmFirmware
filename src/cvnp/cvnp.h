@@ -18,6 +18,21 @@
 // Buffer and table sizes
 #define CVNP_NUM_DDEF                           128 // Number of DDEFs in the protocol
 
+
+// Token positions in a compliant ID word
+#define CVNP_NONC_POS							28
+#define CVNP_BROAD_POS							27
+#define CVNP_SCLS_POS							21
+#define CVNP_SINST_POS							17
+#define CVNP_RCLS_POS							11
+#define CVNP_RINST_POS							7
+#define CVNP_DDEF_POS							7
+
+// Token length masks. Assumes the lsb of the field is aligned with bit 0
+#define CVNP_CLASS_LEN_MASK						((1 << 6) - 1)
+#define CVNP_INST_LEN_MASK						((1 << 4) - 1)
+#define CVNP_DDEF_LEN_MASK						((1 << 7) - 1)
+
 // Standard DDEFS
 #define CVNP_DDEF_ERROR							0
 #define CVNP_DDEF_DEVINFO						1
@@ -156,7 +171,7 @@ inline tCompliantId cvnp_idToStruct(uint32_t id);
 /**
  * Converts an ID structure to an integer ID
  */
-inline uint32_t cvnp_structToId(tCompliantId *id);
+inline uint32_t cvnp_structToId(tCompliantId id);
 
 
 

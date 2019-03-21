@@ -129,7 +129,7 @@ static inline void _cvnp_runDdefhandler(tCanFrame *frame, tCompliantId id) {
 		id.rinst = id.sinst;
 		id.scls = g_myClass;
 		id.sinst = g_myInst;
-		newFrame.id = cvnp_structToId(&id);
+		newFrame.id = cvnp_structToId(id);
 		newFrame.head.rtr = 0;
 		newFrame.head.ide = 1;
 		cvnpHal_sendFrame(newFrame);
@@ -390,6 +390,52 @@ void cvnp_tick(uint32_t now) {
 		}
 	}
 }
+
+
+
+
+/**
+ * Converts a numeric ID to a formatted ID structure. This has to be done
+ * manually versus bitfields as the order and position of bitfields is not
+ * guaranteed.
+ */
+inline tCompliantId cvnp_idToStruct(uint32_t id) {
+	tCompliantId ret;
+	ret.nonc = (id >> CVNP_NONC_POS) & 0x1;
+	ret.broad = (id >> CVNP_BROAD_POS) & 0x1;
+	ret.scls = (id >> CVNP_SCLS_POS) & CVNP_CLASS_LEN_MASK;
+	ret.sinst = (id >> CVNP_SINST_POS) & CVNP_INST_LEN_MASK;
+	ret.rcls = (id >> CVNP_RCLS_POS) & CVNP_CLASS_LEN_MASK;
+	ret.rinst = (id >> CVNP_RINST_POS) & CVNP_INST_LEN_MASK;
+	ret.ddef = (id >> CVNP_DDEF_POS) & CVNP_DDEF_LEN_MASK;
+
+	return ret;
+}
+
+
+
+/**
+ * Converts a formatted ID structure to a numeric id. This has to be done
+ * manually versus bitfields as the order and position of bitfields is not
+ * guaranteed.
+ */
+inline uint32_t cvnp_structToId(tCompliantId id) {
+	uint32_t ret = id.ddef; // Zero everything but the lowest token
+	ret |= id.broad << CVNP_BROAD_POS;
+	ret |= id.nonc << CVNP_NONC_POS;
+	ret |= id.scls << CVNP_SCLS_POS;
+	ret |= id.sinst << CVNP_SINST_POS;
+
+	ret |= id.rcls << CVNP_RCLS_POS;
+	ret |= id.rinst << CVNP_RINST_POS;
+
+	return ret;
+}
+
+
+
+
+
 
 
 
