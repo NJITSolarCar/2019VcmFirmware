@@ -248,6 +248,46 @@ static bool _cvnp_handleNonC(tCanFrame *frame, uint32_t now) {
 }
 
 
+
+/**
+ * Comparison function for broadcast handlers. This is a c-style
+ * compare() function, so it will return 0 if the handlers respond to
+ * the same IDs, > 0 if 'a' responds to a higher id, < 0 if 'b'
+ * responds to a higher id. Note that only the SCLS and DDEF portions
+ * of the ID are considered.
+ */
+static int _cvnp_compareBroadHandler(const void *a, const void *b) {
+	tBroadHandler *ha = (tBroadHandler *)a;
+	tBroadHandler *hb = (tBroadHandler *)b;
+
+	// Extract only the DDEF and SCLS from each
+	uint32_t id_a = ha->id.ddef;
+	id_a |= ha->id.scls << CVNP_SCLS_POS;
+	uint32_t id_b = hb->id.ddef;
+	id_b |= hb->id.scls << CVNP_SCLS_POS;
+
+	return id_a - id_b;
+}
+
+
+
+
+/**
+ * Comparison function for non-compliant handlers. This is a c-style
+ * compare() function, so it will return 0 if the handlers respond to
+ * the same IDs, > 0 if 'a' responds to a higher id, < 0 if 'b'
+ * responds to a higher id.
+ */
+static int _cvnp_compareNonCHandler(const void *a, const void *b) {
+	tNonCHandler *ha = (tNonCHandler *)a;
+	tNonCHandler *hb = (tNonCHandler *)b;
+
+	return ha->id - hb->id;
+}
+
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 ////////////////////////// MAIN  INTERFACE FUNCTIONS //////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -433,6 +473,85 @@ inline uint32_t cvnp_structToId(tCompliantId id) {
 }
 
 
+
+
+/**
+ * Registers a new broadcast handler with the system. If another handler
+ * with the same effective ID is already registered, it will be replaced. If
+ * an identical handler is not found, this will be added to the end of the
+ * buffer. If the buffer is full, the handler will not be added.
+ */
+bool cvnp_registerBroadHandler(tBroadHandler *handler) {
+
+	// Check for a valid frame that matches the one to add
+	bool alreadyExists;
+	for(int i=0; i<CVNP_BROADCAST_BUF_SIZE; i++) {
+		alreadyExists = g_pBroadcastTable[i].valid &&
+				_cvnp_compareBroadHandler(handler, &g_pBroadcastTable[i]);
+		if(alreadyExists) { // Replace the handler and return
+			g_pBroadcastTable[i] = *handler;
+			return true;
+		}
+	}
+
+	// Check for the first invalid handler slot in the buffer to add to
+	for(int i=0; i<CVNP_BROADCAST_BUF_SIZE; i++) {
+		if(g_pBroadcastTable[i].valid) {
+			g_pBroadcastTable[i] = *handler;
+			return true;
+		}
+	}
+
+	// There are no slots in the buffer to insert this frame, so return false
+	return false;
+}
+
+
+
+
+
+/**
+ * Registers a new broadcast handler with the system. If another handler
+ * with the same effective ID is already registered, it will be replaced. If
+ * an identical handler is not found, this will be added to the end of the
+ * buffer. If the buffer is full, the handler will not be added.
+ */
+bool cvnp_registerNonCHandler(tNonCHandler *handler) {
+
+	// Check for a valid frame that matches the one to add
+	bool alreadyExists;
+	for(int i=0; i<CVNP_NONCOMPLIANT_BUF_SIZE; i++) {
+		alreadyExists = g_pNonCTable[i].valid &&
+				_cvnp_compareNonCHandler(handler, &g_pNonCTable[i]);
+		if(alreadyExists) { // Replace the handler and return
+			g_pNonCTable[i] = *handler;
+			return true;
+		}
+	}
+
+	// Check for the first invalid handler slot in the buffer to add to
+	for(int i=0; i<CVNP_NONCOMPLIANT_BUF_SIZE; i++) {
+		if(g_pNonCTable[i].valid) {
+			g_pNonCTable[i] = *handler;
+			return true;
+		}
+	}
+
+	// There are no slots in the buffer to insert this frame, so return false
+	return false;
+}
+
+
+
+/**
+ * Adds a new DDEF handler to the system. If this ID is already allocated, this will
+ * replace it. Will return true if a handler was replaced, false if added new
+ */
+bool cvnp_registerDdefHandler(uint32_t ddef, void (*pfnHandler)(tCanFrame *frame)) {
+	bool isAllocated = g_pfnDdefTable[ddef] != null;
+	g_pfnDdefTable[ddef] = pfnHandler;
+	return isAllocated;
+}
 
 
 

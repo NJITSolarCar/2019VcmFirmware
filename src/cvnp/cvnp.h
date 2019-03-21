@@ -179,9 +179,9 @@ inline uint32_t cvnp_structToId(tCompliantId id);
  * Registers new handlers with the system. If another handler
  * with the same effective ID is already registered, it will be replaced.
  */
-void cvnp_registerBroadHandler(tBroadHandler *handler);
-void cvnp_registerNonCHandler(tNonCHandler *handler);
-void cvnp_registerDdefHandler(uint32_t ddef, void (*pfnHandler)(tCanFrame *frame));
+bool cvnp_registerBroadHandler(tBroadHandler *handler);
+bool cvnp_registerNonCHandler(tNonCHandler *handler);
+bool cvnp_registerDdefHandler(uint32_t ddef, void (*pfnHandler)(tCanFrame *frame));
 
 #endif /* CVNP_CVNP_H_ */
 
