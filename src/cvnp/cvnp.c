@@ -302,6 +302,10 @@ bool cvnp_start(uint32_t myClass, uint32_t myInst) {
 	g_myClass = myClass;
 	g_myInst = myInst;
 
+	// Fill the DDEF buffer with nulls by default
+	for(int i=0; i<CVNP_NUM_DDEF; i++)
+		g_pfnDdefTable[i] = 0;
+
 	// Common frame binding
 	g_pfnDdefTable[CVNP_DDEF_ERROR] = &_cvnp_errorFrameHandler;
 	g_pfnDdefTable[CVNP_DDEF_RESET] = &_cvnp_resetFrameHandler;
@@ -359,13 +363,13 @@ void cvnp_procFrame(tCanFrame *frame) {
 			// is another device with the same class and instance, or a
 			// response was sent after a timeout period.
 
-			// TODO: handle this error condition
+			cvnpHal_handleError(CVNP_INTERNAL_ERR_BAD_RX_FRAME);
 		}
 	}
 
 	// Is a non-compliant frame
 	else if(!_cvnp_handleNonC(frame, now)) {
-		// TODO: the frame wasn't found, assert an error
+		cvnpHal_handleError(CVNP_INTERNAL_ERR_NO_NONC_HANDLER);
 	}
 }
 
@@ -547,8 +551,8 @@ bool cvnp_registerNonCHandler(tNonCHandler *handler) {
  * Adds a new DDEF handler to the system. If this ID is already allocated, this will
  * replace it. Will return true if a handler was replaced, false if added new
  */
-bool cvnp_registerDdefHandler(uint32_t ddef, void (*pfnHandler)(tCanFrame *frame)) {
-	bool isAllocated = g_pfnDdefTable[ddef] != null;
+bool cvnp_registerDdefHandler(uint32_t ddef, bool (*pfnHandler)(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8])) {
+	bool isAllocated = g_pfnDdefTable[ddef] != 0;
 	g_pfnDdefTable[ddef] = pfnHandler;
 	return isAllocated;
 }

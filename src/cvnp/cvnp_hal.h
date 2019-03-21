@@ -47,6 +47,15 @@ uint32_t cvnpHal_now();
 
 
 /**
+ * Called when an internal error is encountered by the CVNP
+ * library. Used mostly for debugging purposes. errNum will be
+ * one of the constants CVNP_INTERNAL_ERR_x, defined in cvnp.h
+ */
+void cvnpHal_handleError(uint32_t errNum);
+
+
+
+/**
  * Performs a system level reset, as requested by the RESET ddef. This
  * reset should be a system-wide reset, though this isn't required.
  */

@@ -18,6 +18,10 @@
 // Buffer and table sizes
 #define CVNP_NUM_DDEF                           128 // Number of DDEFs in the protocol
 
+// Internal error constant identifiers
+#define CVNP_INTERNAL_ERR_UNKNOWN				0
+#define CVNP_INTERNAL_ERR_BAD_RX_FRAME			1
+#define CVNP_INTERNAL_ERR_NO_NONC_HANDLER		2
 
 // Token positions in a compliant ID word
 #define CVNP_NONC_POS							28
@@ -181,7 +185,7 @@ inline uint32_t cvnp_structToId(tCompliantId id);
  */
 bool cvnp_registerBroadHandler(tBroadHandler *handler);
 bool cvnp_registerNonCHandler(tNonCHandler *handler);
-bool cvnp_registerDdefHandler(uint32_t ddef, void (*pfnHandler)(tCanFrame *frame));
+bool cvnp_registerDdefHandler(uint32_t ddef, bool (*pfnHandler)(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]));
 
 #endif /* CVNP_CVNP_H_ */
 
