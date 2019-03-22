@@ -19,7 +19,7 @@
  * run on a test bench setup, so printf, fprintf, fork, etc. are used.
  * This constant will be set by cvnp_debug.make
  */
-#ifdef CVNP_DEBUG_ENABLE
+//#ifdef CVNP_DEBUG_ENABLE
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -29,6 +29,11 @@
 #include "cvnp_config.h"
 #include "cvnp_hal.h"
 #include "cvnp.h"
+
+#define MY_INST 1
+#define MY_CLASS 1
+
+char buf[1024]; // Read buffer
 
 // Pipes for communication between the CAN child and parent
 int p1[2], p2[2];
@@ -54,8 +59,54 @@ void cvnpHal_resetSystem() {
 
 }
 
-int main() {
 
+
+
+/**
+ * Main test routine for the CVNP main code
+ */
+void test_parent() {
+	// Setup pipes
+	bool didStart = cvnp_start(MY_CLASS, MY_INST);
+}
+
+
+/**
+ * Main test routine for the simulated CAN client. This will loop and receive
+ * input frames via the pipes, as well as send its own frames periodically
+ *
+ */
+void test_child() {
+
+}
+
+
+
+int main() {
+	pid_t proc;
+
+	// open pipes
+	if (pipe(p1)==-1)
+	{
+		fprintf(stderr, "Pipe Failed" );
+		return 1;
+	}
+	if (pipe(p2)==-1)
+	{
+		fprintf(stderr, "Pipe Failed" );
+		return 1;
+	}
+
+	// Fork
+	proc = fork();
+	if(p < 0)
+	{
+		fprintf(stderr, "fork Failed" );
+		return 1;
+	} else if(p > 0) // in the parent proc. Main CVNP control goes here
+		test_parent();
+	else // in the child proc. Simulated bus goes here
+		test_child();
 }
 
 
