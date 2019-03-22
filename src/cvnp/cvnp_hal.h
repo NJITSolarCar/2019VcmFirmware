@@ -29,9 +29,9 @@ typedef struct {
 
 
 /**
- * Initializes the bus hardware
+ * Initializes the bus hardware. Returns true if successful
  */
-void cvnpHal_init();
+bool cvnpHal_init();
 
 
 /**
@@ -41,9 +41,25 @@ void cvnpHal_sendFrame(tCanFrame frame);
 
 
 /**
- * Tick routine that should be called periodically
+ * Returns the current system timestamp, in ms
  */
-void cvnpHal_tick(uint32_t ui32Now);
+uint32_t cvnpHal_now();
+
+
+/**
+ * Called when an internal error is encountered by the CVNP
+ * library. Used mostly for debugging purposes. errNum will be
+ * one of the constants CVNP_INTERNAL_ERR_x, defined in cvnp.h
+ */
+void cvnpHal_handleError(uint32_t errNum);
+
+
+
+/**
+ * Performs a system level reset, as requested by the RESET ddef. This
+ * reset should be a system-wide reset, though this isn't required.
+ */
+void cvnpHal_resetSystem();
 
 #endif /* CVNP_CVNP_HAL_H_ */
 
