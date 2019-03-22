@@ -3,7 +3,7 @@
  *
  * User configurations for the CVNP API. Only these values should
  * be changed by the end user. The defaults should be fine, but
- * strict memory requirements or high traffic may warrent changing
+ * strict memory requirements or high traffic may warrant changing
  * some parameters.
  *
  *  Created on: Mar 7, 2019
