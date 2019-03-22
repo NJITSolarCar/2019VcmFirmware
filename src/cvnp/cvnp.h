@@ -169,13 +169,13 @@ bool cvnp_start(uint32_t myClass, uint32_t myInst);
 /**
  * Converts an integer ID to an ID structure with the bits broken out.
  */
-inline tCompliantId cvnp_idToStruct(uint32_t id);
+tCompliantId cvnp_idToStruct(uint32_t id);
 
 
 /**
  * Converts an ID structure to an integer ID
  */
-inline uint32_t cvnp_structToId(tCompliantId id);
+uint32_t cvnp_structToId(tCompliantId id);
 
 
 
