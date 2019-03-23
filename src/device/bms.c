@@ -18,6 +18,8 @@
 #include "../cvnp/cvnp.h"
 #include "../cvnp/cvnp_hal.h"
 
+// Current bms state data
+static tBMSData g_bmsData;
 
 /**
  * Timeout routine to bind to the CVNP reader frames. Will be called

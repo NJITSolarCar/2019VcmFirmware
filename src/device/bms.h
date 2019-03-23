@@ -11,7 +11,7 @@
 #ifndef SRC_DEVICE_BMS_H_
 #define SRC_DEVICE_BMS_H_
 
-#define BMS_NUM_CELLS               20;
+#define BMS_NUM_CELLS               20
 
 // BMS CAN base ID. BMS frame numbers are added to this to build the actual ID
 #define BMS_ID_BASE					0x6B0
