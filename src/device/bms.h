@@ -13,6 +13,16 @@
 
 #define BMS_NUM_CELLS               20;
 
+// BMS CAN base ID. BMS frame numbers are added to this to build the actual ID
+#define BMS_ID_BASE					0x6B0
+
+// Timeouts for frames. If the frame isn't received for a period at least this
+// this long, CVNP will flag an error. Units in ms.
+#define BMS_FRAME0_TIMEOUT			20
+#define BMS_FRAME1_TIMEOUT			75
+#define BMS_FRAME2_TIMEOUT			200
+
+
 /**
  * Data for one cell
  */
