@@ -14,6 +14,12 @@
 
 #include <stdint.h>
 
+
+#define KBL_VBAT_SCL						0.369 // 1/2.71
+#define KBL_THROTTLE_SCL					0.0196078f // 5/255
+#define KBL_VS_TO_VOLTS(x)					((((float)(x-120))*0.0357f)+4.75f) // Conversion of hall sensor voltage from ADC reading to an analog voltage
+
+
 /**
  * Status information about a motor and motor controller
  */
@@ -22,6 +28,7 @@ typedef struct {
     float iMot                              // Battery / motor current
     float va, vb, vc;                       // Phase voltages
     float vBat                              // Battery voltage
+	float vs;								// Hall sensor voltage
     float vOperating;                       // 12V rail voltage
     float brake;                             // Brake percentage
     float throttle;                         // Throttle percentage
