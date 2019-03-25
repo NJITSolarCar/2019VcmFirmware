@@ -19,7 +19,7 @@
  * run on a test bench setup, so printf, fprintf, fork, etc. are used.
  * This constant will be set by cvnp_debug.make
  */
-//#ifdef CVNP_DEBUG_ENABLE
+#ifdef CVNP_DEBUG_ENABLE
 
 #include <stdint.h>
 #include <stdbool.h>

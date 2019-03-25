@@ -54,6 +54,14 @@ void fault_deassert(uint32_t ui32FaultNum) {
 
 
 
+/**
+ * Registers a set of handler functions for a certain fault number.
+ */
+void fault_regHook(uint32_t faultNum, void (*pfnOnAssert)(tFaultData), void (*pfnOnDeassert)(void)) {
+	tFaultHook *fh = &g_faults[ui32FaultNum]; // utility copy
+	fh->pfnOnAssert = pfnOnAssert;
+	fh->pfnOnDeassert = pfnOnDeassert;
+}
 
 
 
