@@ -11,6 +11,48 @@
 // List of all faults, handlers, and their data in the system
 static tFaultHook g_faults[FAULT_NUM_FAULTS];
 
+
+/**
+ * Default function to be called on a fault assert , if none is set. This
+ * will lock up the system and set the indicator light.
+ */
+static _fault_defaultOnAsert(tFaultData data) {
+	// TODO: add a call to put the system into a safe state
+
+	for(;;); // Trap system
+}
+
+
+
+
+/**
+ * Default function to be called for a fault deassert. Does nothing.
+ */
+static _fault_defaultOnDeasert() {
+
+}
+
+
+
+
+/**
+ * Initializes the fault control module. Will populate the
+ * fault hook table with default handlers, which will lock
+ * the system while in a debug build. If not in a debug build,
+ * the fault will be ignored.
+ */
+void fault_init() {
+	// bind default hooks
+	for(int i=0; i<FAULT_NUM_FAULTS; i++) {
+		g_faults[i].pfnOnAssert = _fault_defaultOnAsert;
+		g_faults[i].pfnOnDeassert = _fault_defaultOnDeasert;
+		g_faults[i].bSet = 0;
+		g_faults[i].ui32TSet = 0;
+	}
+}
+
+
+
 /**
  * Returns a summary of which faults are set in the system, where each bit
  * in the return value corresponds to one fault. If the fault is set, then

@@ -76,6 +76,16 @@ typedef struct {
     tFaultData uData;
 } tFaultHook;
 
+
+/**
+ * Initializes the fault control module. Will populate the
+ * fault hook table with default handlers, which will lock
+ * the system.
+ */
+void fault_init();
+
+
+
 /**
  * Returns a summary of which faults are set in the system, where each bit
  * in the return value corresponds to one fault. If the fault is set, then
