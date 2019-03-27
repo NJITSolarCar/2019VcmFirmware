@@ -12,6 +12,8 @@
 #include "../cvnp/cvnp.h"
 #include "../cvnp/cvnp_hal.h"
 
+#include <driverlib/timer.h>
+
 // Data for left and right motors
 static tMotorData g_lMotData, g_rMotData;
 
@@ -160,6 +162,85 @@ void _kbl_parseFrameGen(tCanFrame *frame) {
 	}
 	}
 }
+
+
+
+
+/**
+ * Initializes the motor controller driver. Currently does nothing.
+ */
+void kbl_init() {
+
+}
+
+/**
+ * Tick routine that runs every 10 ms.
+ */
+void kbl_tick() {
+	static uint8_t state = 0;
+	static uint32_t callCount = 0;
+
+	// increment each time
+	callCount++;
+	if(callCount % KBL_TICK_UPDATE_PERIOD == 0) { // send a query
+		bool isLeft = state % 2; // Alternating left / right states
+		uint8_t queryType;
+		switch(state >> 1) { // State / 2. Need it to compensate for alternating between left and right
+		case 0: {
+			queryType = KBL_FRAME_A2D_BATCH_1;
+			state++;
+			break;
+		}
+		case 1: {
+			queryType = KBL_FRAME_A2D_BATCH_2;
+			state++;
+			break;
+		}
+		case 2: {
+			queryType = KBL_FRAME_CCP1;
+			state++;
+			break;
+		}
+		case 3: {
+			queryType = KBL_FRAME_CCP2;
+			state++;
+			break;
+		}
+		case 4: {
+			queryType = KBL_FRAME_COM_SW_ACC;
+			state++;
+			break;
+		}
+		case 5: {
+			queryType = KBL_FRAME_COM_SW_REV;
+			state++;
+			break;
+		}
+		case 6: {
+			queryType = KBL_FRAME_COM_SW_BRK;
+			state++;
+			break;
+		}
+		default: {
+			state = 0;
+		}
+		}
+
+		// transmit the query
+		tCanFrame txFrame;
+		txFrame.id = isLeft ? KBL_ID_TX_LEFT : KBL_ID_TX_RIGHT;
+		txFrame.head.dlc = 1;
+		txFrame.head.rtr = 0;
+		txFrame.head.ide = 0;
+		txFrame.data[0] = queryType;
+		cvnpHal_sendFrame(txFrame);
+	}
+}
+
+
+
+
+
 
 
 

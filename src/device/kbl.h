@@ -3,7 +3,10 @@
  *
  * Driver for the motor controller. The functions listed should be enough
  * for the external interface, but many more functions will need to be
- * written to be able to get information from the motor controller
+ * written to be able to get information from the motor controller.
+ *
+ * Peripherals used:
+ * - Timer 0
  *
  *  Created on: Mar 8, 2019
  *      Author: Duemmer
@@ -13,6 +16,10 @@
 #define SRC_DEVICE_H_KBL_H_
 
 #include <stdint.h>
+
+// How many 10 ms ticks elapse between successive queries. Will query L, wait
+// this many ticks, query R, wait this many ticks, etc.
+#define KBL_TICK_UPDATE_PERIOD				5
 
 // Frame IDs for the left and right motor
 #define KBL_ID_TX_LEFT						0x70
@@ -64,12 +71,10 @@ void kbl_init();
 
 
 /**
- * Tick routine to be run every ~10ms. This is where this api can
+ * Tick routine to be run every 10ms. This is where this api can
  * periodically query, check stuff, etc.
- *
- * \param now the current millisecond timestamp
  */
-void kbl_tick(uint32_t now);
+void kbl_tick();
 
 
 /**
