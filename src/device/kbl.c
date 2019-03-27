@@ -13,14 +13,17 @@
 #include "../cvnp/cvnp_hal.h"
 
 // Data for left and right motors
-tMotorData g_lMotData, g_rMotData;
+static tMotorData g_lMotData, g_rMotData;
+
+// frame query types for latest transmission
+static uint8_t g_lMotQuery = 0, g_rMotQuery = 0;
 
 
 /**
  * Parse an incoming A2D batch 1 frame
  */
 void _kbl_parseA2DBatch1(tCanFrame *frame, bool isLeft) {
-	tMotorData *dat = isLeft ? &g_lMotData : g_rMotData;
+	tMotorData *dat = isLeft ? &g_lMotData : &g_rMotData;
 	dat->brake = ((float)frame->data[0]) * KBL_THROTTLE_SCL;
 	dat->throttle = ((float)frame->data[1]) * KBL_THROTTLE_SCL;
 	dat->vOperating = ((float)frame->data[2]) * KBL_VBAT_SCL;
@@ -35,7 +38,7 @@ void _kbl_parseA2DBatch1(tCanFrame *frame, bool isLeft) {
  * Parse an incoming A2D batch 2 frame
  */
 void _kbl_parseA2DBatch2(tCanFrame *frame, bool isLeft) {
-	tMotorData *dat = isLeft ? &g_lMotData : g_rMotData;
+	tMotorData *dat = isLeft ? &g_lMotData : &g_rMotData;
 	dat->ia = (float)frame->data[0];
 	dat->ib = (float)frame->data[1];
 	dat->ic = (float)frame->data[2];
@@ -47,14 +50,116 @@ void _kbl_parseA2DBatch2(tCanFrame *frame, bool isLeft) {
 
 
 
+/**
+ * Parse an incoming CCP Monitor 1
+ */
+void _kbl_parseCCP1(tCanFrame *frame, bool isLeft) {
+	tMotorData *dat = isLeft ? &g_lMotData : &g_rMotData;
+
+	// If this byte is 0xFF, the sensor is not connected, so record 0 instead
+	uint8_t tMotByte = frame->data[2];
+	dat->tMot = tMotByte == 0xFF ? 0.0f : (float)tMotByte;
+
+	// Average the 3 internal temperatures
+	dat->tController = (float)frame->data[3];
+	dat->tController += (float)frame->data[4];
+	dat->tController += (float)frame->data[5];
+	dat->tController *= 0.3333333333;
+}
+
+
+
+/**
+ * Parse an incoming CCP Monitor 2
+ */
+void _kbl_parseCCP2(tCanFrame *frame, bool isLeft) {
+	tMotorData *dat = isLeft ? &g_lMotData : &g_rMotData;
+	uint16_t rpmWord = frame->data[0];
+	rpmWord <<= 8;
+	rpmWord |= frame->data[1];
+	dat->mechRPM = KBL_NUM_POLES_INV * ((float)rpmWord);
+	dat->iMot = KBL_RATED_CURRENT * ((float)frame->data[2]) * 0.01f;
+}
 
 
 
 
+/**
+ * Parse an incoming COM_SW_ACC frame
+ */
+void _kbl_parseComSwAcc(tCanFrame *frame, bool isLeft) {
+	tMotorData *dat = isLeft ? &g_lMotData : &g_rMotData;
+	dat->swThrottle = !!frame->data[0];
+}
+
+
+
+/**
+ * Parse an incoming COM_SW_BRK frame
+ */
+void _kbl_parseComSwBrk(tCanFrame *frame, bool isLeft) {
+	tMotorData *dat = isLeft ? &g_lMotData : &g_rMotData;
+	dat->swBrake = !!frame->data[0];
+}
 
 
 
 
+/**
+ * Parse an incoming COM_SW_REV frame
+ */
+void _kbl_parseComSwRev(tCanFrame *frame, bool isLeft) {
+	tMotorData *dat = isLeft ? &g_lMotData : &g_rMotData;
+	dat->swRev = !!frame->data[0];
+}
+
+
+
+/**
+ * Master parse routine for incoming frames. Will decide which
+ * motor controller has sent the frame based on the ID. The type of
+ * request last sent for each motor controller is recorded by the
+ * query routines, and based on that will delegate to the correct
+ * sub-parse routine.
+ */
+void _kbl_parseFrameGen(tCanFrame *frame) {
+	bool isLeft = frame->id == KBL_ID_TX_LEFT;
+	uint8_t query = isLeft ? g_lMotQuery : g_rMotQuery;
+
+	switch(query) {
+	case KBL_FRAME_A2D_BATCH_1: {
+		_kbl_parseA2DBatch1(frame, isLeft);
+		break;
+	}
+	case KBL_FRAME_A2D_BATCH_2: {
+		_kbl_parseA2DBatch2(frame, isLeft);
+		break;
+	}
+	case KBL_FRAME_CCP1: {
+		_kbl_parseCCP1(frame, isLeft);
+		break;
+	}
+	case KBL_FRAME_CCP2: {
+		_kbl_parseCCP2(frame, isLeft);
+		break;
+	}
+	case KBL_FRAME_COM_SW_ACC: {
+		_kbl_parseComSwAcc(frame, isLeft);
+		break;
+	}
+	case KBL_FRAME_COM_SW_REV: {
+		_kbl_parseComSwRev(frame, isLeft);
+		break;
+	}
+	case KBL_FRAME_COM_SW_BRK: {
+		_kbl_parseComSwAcc(frame, isLeft);
+		break;
+	}
+	default : {
+		// TODO: Assert an error, illegal frame query byte
+	}
+	}
+}
 
 
 
