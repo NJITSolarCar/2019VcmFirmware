@@ -12,8 +12,6 @@
 #include "../cvnp/cvnp.h"
 #include "../cvnp/cvnp_hal.h"
 
-#include <driverlib/timer.h>
-
 // Data for left and right motors
 static tMotorData g_lMotData, g_rMotData;
 
