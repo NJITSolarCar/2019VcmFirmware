@@ -18,6 +18,8 @@
 
 #define MPPT_NUM_MPPT        	3 // Number of MPPTs in the system
 
+#define MPPT_NUM_TICKS			5 // Number of ticks between queries on the system
+
 // MPPT Base addresses
 #define MPPT_BASE_REQUEST_ID	(0x71 << 4)
 #define MPPT_BASE_RESPONSE_ID	(0x77 << 4)
@@ -53,7 +55,6 @@ void mppt_init();
  * Tick routine to be run every 10ms. This is where this api can
  * periodically query, check stuff, etc.
  *
- * \param now the current millisecond timestamp
  */
 void mppt_tick();
 

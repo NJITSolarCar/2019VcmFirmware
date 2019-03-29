@@ -68,6 +68,33 @@ static void _parseMpptResponse(tCanFrame *frame) {
 
 
 
+/**
+ * Called periodically to run the mppt queries. Will cycle through all
+ * MPPTs
+ */
+void mppt_tick() {
+	static uint32_t count = 0; // count of times that this function was called
+	static uint32_t lastMppt = 0; // last MPPT index that was queried
+	if(!(count++ % MPPT_NUM_TICKS)) {
+		if(++lastMppt >= MPPT_NUM_MPPT) // update which mppt to query
+			lastMppt = 0;
+
+		// Frame to send
+		tCanFrame frame;
+		frame.id = MPPT_BASE_REQUEST_ID + lastMppt + 1;
+		frame.head.dlc = 0;
+		frame.head.rtr = 0;
+		frame.head.ide = 0;
+
+		cvnpHal_sendFrame(frame);
+	}
+}
+
+
+
+
+
+
 
 
 
