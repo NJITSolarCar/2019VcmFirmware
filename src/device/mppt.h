@@ -5,7 +5,7 @@
  * written to be able to get information from the mppts.
  *
  * Assumes each MPPT's CAN ID is indexed sequentially starting from the base
- * address (offset 0)
+ * address + 1 (offset 1)
  *
  *  Created on: Mar 9, 2019
  *      Author: Duemmer
@@ -19,8 +19,14 @@
 #define MPPT_NUM_MPPT        	3 // Number of MPPTs in the system
 
 // MPPT Base addresses
-#define MPPT_BASE_REQUEST_ID	0x71
-#define MPPT_BASE_RESPONSE_ID	0x77
+#define MPPT_BASE_REQUEST_ID	(0x71 << 4)
+#define MPPT_BASE_RESPONSE_ID	(0x77 << 4)
+
+// Flag offsets
+#define MPPT_FLALG_BVLR			7
+#define MPPT_FLALG_OVT			6
+#define MPPT_FLALG_NOC			5
+#define MPPT_FLALG_UNDV			4
 
 /**
  * Status information about an MPPT
