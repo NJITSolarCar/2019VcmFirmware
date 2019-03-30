@@ -105,6 +105,11 @@ void fault_assert(uint32_t ui32FaultNum, tFaultData uData);
 void fault_deassert(uint32_t ui32FaultNum);
 
 
+/**
+ * Fetches the data for the specified fault
+ */
+tFaultData fault_getFaultData(uint32_t fault);
+
 
 /**
  * Registers a set of handler functions for a certain fault number

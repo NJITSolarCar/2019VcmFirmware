@@ -16,7 +16,7 @@ static tFaultHook g_faults[FAULT_NUM_FAULTS];
  * Default function to be called on a fault assert , if none is set. This
  * will lock up the system and set the indicator light.
  */
-static _fault_defaultOnAsert(tFaultData data) {
+static void _fault_defaultOnAsert(tFaultData data) {
 	// TODO: add a call to put the system into a safe state
 
 	for(;;); // Trap system
@@ -28,7 +28,7 @@ static _fault_defaultOnAsert(tFaultData data) {
 /**
  * Default function to be called for a fault deassert. Does nothing.
  */
-static _fault_defaultOnDeasert() {
+static void _fault_defaultOnDeasert() {
 
 }
 
@@ -97,10 +97,19 @@ void fault_deassert(uint32_t ui32FaultNum) {
 
 
 /**
+ * Fetches the data for the specified fault
+ */
+tFaultData fault_getFaultData(uint32_t fault) {
+	return g_faults[fault].uData;
+}
+
+
+
+/**
  * Registers a set of handler functions for a certain fault number.
  */
 void fault_regHook(uint32_t faultNum, void (*pfnOnAssert)(tFaultData), void (*pfnOnDeassert)(void)) {
-	tFaultHook *fh = &g_faults[ui32FaultNum]; // utility copy
+	tFaultHook *fh = &g_faults[faultNum]; // utility copy
 	fh->pfnOnAssert = pfnOnAssert;
 	fh->pfnOnDeassert = pfnOnDeassert;
 }
