@@ -124,7 +124,12 @@ static void _bms_parseFrame0(tCanFrame *frame) {
 static void _bms_parseFrame1(tCanFrame *frame) {
 	g_bmsData.tMinIdx = frame->data[1];
 	g_bmsData.tMaxIdx = frame->data[3];
-	g_bmsData.t
+	g_bmsData.tMin = frame->data[0];
+	g_bmsData.tMax = frame->data[2];
+	g_bmsData.flag4 = _bms_byteToFlag4(frame->data[4]);
+	g_bmsData.soc = ((float) frame->data[5]) * 0.5f;
+	g_bmsData.vMinIdx = frame->data[6];
+	g_bmsData.vMaxIdx = frame->data[7];
 }
 
 
@@ -132,14 +137,24 @@ static void _bms_parseFrame1(tCanFrame *frame) {
 
 
 /**
- * Frame 2. Contains:
+ * Cell Broadcast. Contains:
  *  - Cell Index
  *  - Cell Instantaneous Voltage (0.1mV)
  *  - Cell Resistance (0.01mOhm)
  *  - Cell Open Voltage (0.1mV)
  */
 static void _bms_parseCellBroadcast(tCanFrame *frame) {
+	tCellData *dat = &g_bmsData.cellData[frame->data[0]];
 
+	// Instantaneous voltage
+	uint16_t tmp = ((uint16_t)frame->data[1]) << 8;
+	tmp |= frame->data[2];
+	dat->voltage = ((float)tmp) * 1E-4f;
+
+	// Resistance
+	tmp = ((uint16_t)frame->data[3] & 0x7F) << 8; // Mask the MSB, used to indicate a different condition
+	tmp |= frame->data[4];
+	dat->voltage = ((float)tmp) * 1E-5f;
 }
 
 
@@ -167,6 +182,12 @@ void bms_init() {
 	tmpHdl.id = BMS_ID_BASE + 1;
 	tmpHdl.timeout = BMS_FRAME1_TIMEOUT;
 	tmpHdl.pfnProcFrame = _bms_parseFrame1;
+	cvnp_registerNonCHandler(&tmpHdl);
+
+	// Cell Broadcast
+	tmpHdl.id = BMS_ID_BASE + 2;
+	tmpHdl.timeout = BMS_CELL_BROAD_TIMEOUT;
+	tmpHdl.pfnProcFrame = _bms_parseCellBroadcast;
 	cvnp_registerNonCHandler(&tmpHdl);
 }
 
