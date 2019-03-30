@@ -22,12 +22,52 @@
 // Current bms state data
 static tBMSData g_bmsData;
 
+
+/**
+ * COnverts a BMS flag 0 byte into a tBmsFlag0 structure
+ */
+static tBmsFlag0 _bms_byteToFlag0(uint8_t b) {
+	tBmsFlag0 f;
+	f.rlyChgFault = b & 1;
+	f.rlyDisFault = (b >> 1) & 1;
+	f.cellOVFault = (b >> 2) & 1;
+	f.cellUVFault = (b >> 3) & 1;
+	f.thermistorFault = (b >> 4) & 1;
+	f.overTempFault = (b >> 5) & 1;
+	// Skip bit 6, we don't need heatsink thermistor fault
+	f.cellOpenWiringFault = (b >> 7) & 1;
+
+	return f;
+}
+
+
+
+
+/**
+ * COnverts a BMS flag 4 byte into a tBmsFlag0 structure
+ */
+static tBmsFlag4 _bms_byteToFlag4(uint8_t b) {
+	tBmsFlag4 f;
+	f.heatsinkThermistorFault = b & 1;
+	f.weakCellFault = (b >> 1) & 1;
+	f.currentSenseFault = (b >> 2) & 1;
+	f.isolationFault = (b >> 3) & 1;
+	f.internalCellCommFault = (b >> 4) & 1;
+	f.internalLogicFault = (b >> 5) & 1;
+	f.internalHardwareFault = (b >> 6) & 1;
+
+	return f;
+}
+
+
+
+
 /**
  * Timeout routine to bind to the CVNP reader frames. Will be called
  * when a timeout occurs for any of the CAN frames. This will assert
  * a BMS communication fault
  */
-void _bms_cvnpOnTimeout(bool wasKilled) {
+static void _bms_cvnpOnTimeout(bool wasKilled) {
 	tFaultData data;
 	data.ui64 = wasKilled;
 	fault_assert(FAULT_BMS_COMM, data);
@@ -38,11 +78,33 @@ void _bms_cvnpOnTimeout(bool wasKilled) {
  * Frame 0. Contains:
  *  - Flag 0
  *  - Pack voltage (0.1V)
- *  - Relay state word
+ *  - Relay state byte
  *  - Pack current (0.1A)
+ *  - Average Cell Voltage (0.1mV)
  */
-void _bms_parseFrame0(tCanFrame *frame) {
+static void _bms_parseFrame0(tCanFrame *frame) {
+	g_bmsData.flag0 = _bms_byteToFlag0(frame->data[0]);
 
+	// Get pack voltage
+	uint16_t tmp = ((uint16_t)frame->data[1]) << 8;
+	tmp |= frame->data[2];
+	g_bmsData.vBat = ((float) tmp) * 0.1f;
+
+	// Extract the relay information we care about.
+	// Is contained in a custom flag with the first 2 bits
+	// set to the discharge and charge relay states, respectively
+	g_bmsData.rlyDis = frame->data[3] & 1;
+	g_bmsData.rlyChg = (frame->data[3] >> 1) & 1;
+
+	// Get current
+	tmp = ((uint16_t)frame->data[4]) << 8;
+	tmp |= frame->data[5];
+	g_bmsData.iBat = ((float) tmp) * 0.1f;
+
+	// Get Avg. cell voltage
+	tmp = ((uint16_t)frame->data[6]) << 8;
+	tmp |= frame->data[7];
+	g_bmsData.iBat = ((float) tmp) * 1E-4f;
 }
 
 
@@ -56,9 +118,13 @@ void _bms_parseFrame0(tCanFrame *frame) {
  *  - Highest Temperature thermistor index
  *  - Custom Flag 4
  *  - Pack SoC
+ *  - Low Cell Voltage Index
+ *  - High Cell Voltage Index
  */
-void _bms_parseFrame1(tCanFrame *frame) {
-
+static void _bms_parseFrame1(tCanFrame *frame) {
+	g_bmsData.tMinIdx = frame->data[1];
+	g_bmsData.tMaxIdx = frame->data[3];
+	g_bmsData.t
 }
 
 
@@ -72,7 +138,7 @@ void _bms_parseFrame1(tCanFrame *frame) {
  *  - Cell Resistance (0.01mOhm)
  *  - Cell Open Voltage (0.1mV)
  */
-void _bms_parseCellBroadcast(tCanFrame *frame) {
+static void _bms_parseCellBroadcast(tCanFrame *frame) {
 
 }
 

@@ -28,7 +28,7 @@
  */
 typedef struct {
     float voltage;
-    float temp;
+    float resistance;
 } tCellData;
 
 
@@ -74,7 +74,11 @@ typedef struct {
     float soc;
     float vInput;
     uint8_t vMaxIdx;
+    uint8_t vMinIdx;
     uint8_t tMaxIdx;
+    uint8_t tMinIdx;
+    uint8_t tMin;
+    uint8_t tMax;
     uint8_t rlyDis : 1;
     uint8_t rlyChg : 1;
 
