@@ -36,18 +36,13 @@ void _bms_cvnpOnTimeout(bool wasKilled) {
 
 /**
  * Frame 0. Contains:
- *  - Checksum (unused at the moment)
- *  - Pack current (0.1A)
+ *  - Flag 0
  *  - Pack voltage (0.1V)
- *  - Pack SOC (0.5%)
- *  - Charging supply voltage (0.1V)
+ *  - Relay state word
+ *  - Pack current (0.1A)
  */
 void _bms_parseFrame0(tCanFrame *frame) {
-	uint16_t rawCurrent = frame->data[2] << 8;
-	rawCurrent |= frame->data[3];
-	g_bmsData.iBat = ((float) rawCurrent) * 0.1f;
-	g_bmsData.vBat = ((float)frame->data[4]) * 0.1f;
-	g_bmsData.soc = ((float)frame->data[5]
+
 }
 
 
@@ -55,12 +50,12 @@ void _bms_parseFrame0(tCanFrame *frame) {
 
 /**
  * Frame 1. Contains:
- *  - Relay State (bit packed byte)
- *  - High cell voltage (mV * 10)
- *  - Highest cell index
- *  - Low cell voltage (mV * 10)
- *  - Lowest cell index
- *  - Average cell voltage (mV * 10)
+ *  - Lowest Temperature
+ *  - Lowest Temperature thermistor index
+ *  - Highest Temperature
+ *  - Highest Temperature thermistor index
+ *  - Custom Flag 4
+ *  - Pack SoC
  */
 void _bms_parseFrame1(tCanFrame *frame) {
 
@@ -72,14 +67,12 @@ void _bms_parseFrame1(tCanFrame *frame) {
 
 /**
  * Frame 2. Contains:
- *  - Custom flags (bit packed word)
- *  - High temperature thermistor
- *  - Highest thermistor ID
- *  - High temperature thermistor
- *  - Highest thermistor ID
- *  - Average temperature thermistor
+ *  - Cell Index
+ *  - Cell Instantaneous Voltage (0.1mV)
+ *  - Cell Resistance (0.01mOhm)
+ *  - Cell Open Voltage (0.1mV)
  */
-void _bms_parseFrame2(tCanFrame *frame) {
+void _bms_parseCellBroadcast(tCanFrame *frame) {
 
 }
 
@@ -108,12 +101,6 @@ void bms_init() {
 	tmpHdl.id = BMS_ID_BASE + 1;
 	tmpHdl.timeout = BMS_FRAME1_TIMEOUT;
 	tmpHdl.pfnProcFrame = _bms_parseFrame1;
-	cvnp_registerNonCHandler(&tmpHdl);
-
-	// Frame 2
-	tmpHdl.id = BMS_ID_BASE + 2;
-	tmpHdl.timeout = BMS_FRAME2_TIMEOUT;
-	tmpHdl.pfnProcFrame = _bms_parseFrame2;
 	cvnp_registerNonCHandler(&tmpHdl);
 }
 
