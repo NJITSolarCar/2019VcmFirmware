@@ -22,7 +22,7 @@ static tMpptData g_mpptDat[MPPT_NUM_MPPT];
  * based on the offset of the ID from the base. If the number is out of
  * range of the expected values, an error will be flagged.
  */
-static void _parseMpptResponse(tCanFrame *frame) {
+static void _mppt_parseResponse(tCanFrame *frame) {
 	if(frame->id & ~0xF != MPPT_BASE_RESPONSE_ID) {
 		// TODO: Assert an error, base ID was bad
 		return;
@@ -63,6 +63,54 @@ static void _parseMpptResponse(tCanFrame *frame) {
 
 }
 
+
+/**
+ * Master MPPT timeout routine. Will assert an MPPT communication
+ * fault if it was not killed, or a CVNP fault if it was.
+ */
+static void _mppt_onMpptTimeout(bool wasKilled, uint32_t mpptNum) {
+	// For now, just assert a common fault for any that fail. In the
+	// future, separate faults can potentially be generated
+}
+
+
+
+/**
+ * Function to be called by cvnp when a specific MPPT frame hasn't been
+ * received in the timeout period. Will delegate to _mppt_onMpptTimeout.
+ * For now only 3 of these are declared, but more can be added later if
+ * needed.
+ */
+static void _mppt_onMpptTimeout0(bool wasKilled) { _mppt_onMpptTimeout(wasKilled, 0); }
+static void _mppt_onMpptTimeout1(bool wasKilled) { _mppt_onMpptTimeout(wasKilled, 1); }
+static void _mppt_onMpptTimeout2(bool wasKilled) { _mppt_onMpptTimeout(wasKilled, 2); }
+
+
+
+
+/**
+ * Initialize routine for the MPPTs. Will bind all necessary
+ * cvnp handlers for the MPPT module
+ */
+void mppt_init() {
+	tNonCHandler hdl;
+	hdl.id = MPPT_BASE_RESPONSE_ID + 1;
+	hdl.timeout = MPPT_RX_TIMEOUT;
+	hdl.pfnProcFrame = _mppt_parseResponse;
+
+	// For now just bind the first 3 error handlers
+	hdl.pfnOnDeath = _mppt_onMpptTimeout0;
+	cvnp_registerNonCHandler(&hdl);
+
+	hdl.id++;
+	hdl.pfnOnDeath = _mppt_onMpptTimeout1;
+	cvnp_registerNonCHandler(&hdl);
+
+	hdl.id++;
+	hdl.pfnOnDeath = _mppt_onMpptTimeout2;
+	cvnp_registerNonCHandler(&hdl);
+
+}
 
 
 
