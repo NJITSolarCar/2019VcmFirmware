@@ -28,13 +28,25 @@
  *      Author: Duemmer
  */
 
+// Common C includes
+#include <stdbool.h>
+#include <stdint.h>
 
+// General purpose files
+#include "src/fault.h"
+#include "src/interrupt.h"
+#include "src/hal/resource.h"
 
-// Dummy include to prevent a compile error occurring in this header file
-//#include "src/hal/resource.h"
+// Specific modules / devices
+#include "src/device/bms.h"
+#include "src/device/mppt.h"
+#include "src/device/kbl.h"
+#include "src/device/ina225.h"
+#include "src/device/indicator.h"
+#include "src/device/vcm_io.h"
 
-#include "stdbool.h"
-#include "stdint.h"
+// CVNP
+#include "src/cvnp/cvnp.h"
 
 /**
  * main.c

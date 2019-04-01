@@ -19,6 +19,6 @@
  * initialization, but it should include binding different handlers
  * and other implementation specific details.
  */
-vcmio_init();
+void vcmio_init();
 
 #endif /* SRC_DEVICE_VCM_H_ */

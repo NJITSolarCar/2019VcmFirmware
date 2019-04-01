@@ -41,8 +41,4 @@ void int_onThermoSampleDone(uint32_t *pBuf);
 void int_onCurrentSampleDone(uint32_t adc);
 
 
-
-void int_
-
-
 #endif /* SRC_INTERRUPT_H_ */
