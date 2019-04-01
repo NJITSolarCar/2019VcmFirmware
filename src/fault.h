@@ -76,6 +76,16 @@ typedef struct {
     tFaultData uData;
 } tFaultHook;
 
+
+/**
+ * Initializes the fault control module. Will populate the
+ * fault hook table with default handlers, which will lock
+ * the system.
+ */
+void fault_init();
+
+
+
 /**
  * Returns a summary of which faults are set in the system, where each bit
  * in the return value corresponds to one fault. If the fault is set, then
@@ -93,6 +103,18 @@ void fault_assert(uint32_t ui32FaultNum, tFaultData uData);
  * Deasserts the fault from the system
  */
 void fault_deassert(uint32_t ui32FaultNum);
+
+
+/**
+ * Fetches the data for the specified fault
+ */
+tFaultData fault_getFaultData(uint32_t fault);
+
+
+/**
+ * Registers a set of handler functions for a certain fault number
+ */
+void fault_regHook(uint32_t faultNum, void (*pfnOnAssert)(tFaultData), void (*pfnOnDeassert)(void));
 
 #endif /* FAULT_H_ */
 
