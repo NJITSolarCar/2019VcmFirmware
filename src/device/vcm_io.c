@@ -1,17 +1,30 @@
 /*
- * vcm_io.h
+ * vcm_io.c
  *
  * Primary set of drivers for the VCM in terms of I/O. This provides
  * the external API of the VCM itself, particularly over CAN. This is not
  * so much the place for program flow control, structure, and algorithm. That
  * should be resident in vcm.c.
  *
- *  Created on: Mar 12, 2019
+ *  Created on: Apr 3, 2019
  *      Author: Duemmer
  */
 
-#ifndef SRC_DEVICE_VCM_IO_H_
-#define SRC_DEVICE_VCM_IO_H_
+
+#include <stdint.h>
+#include <stdbool.h>
+
+#include "bms.h"
+#include "ina225.h"
+#include "indicator.h"
+#include "kbl.h"
+#include "mppt.h"
+#include "vcm_io.h"
+
+#include "../fault.h"
+#include "../cvnp/cvnp.h"
+#include "../cvnp/cvnp_hal.h"
+
 
 /**
  * Initializes the vcm I/O system. This means just setting up internal
@@ -19,6 +32,6 @@
  * initialization, but it should include binding different handlers
  * and other implementation specific details.
  */
-void vcmio_init();
-
-#endif /* SRC_DEVICE_VCM_H_ */
+void vcmio_init() {
+	// Initialize CVNP
+}

@@ -35,7 +35,6 @@
 // General purpose files
 #include "src/fault.h"
 #include "src/interrupt.h"
-#include "src/hal/resource.h"
 
 // Specific modules / devices
 #include "src/device/bms.h"
@@ -45,13 +44,30 @@
 #include "src/device/indicator.h"
 #include "src/device/vcm_io.h"
 
+// Hardware access
+#include "src/hal/adc.h"
+#include "src/hal/gpio.h"
+#include "src/hal/ioctl.h"
+#include "src/hal/resource.h"
+
 // CVNP
 #include "src/cvnp/cvnp.h"
+
+// Driverlib includes
+#include <driverlib/timer.h>
 
 /**
  * main.c
  */
 int main(void)
 {
+	// Startup sequence
+	ioctl_reset();
+	// TODO: Add routine to initialize interrupt handlers
+	gpio_init();
+	adc_init();
+
+
+
 	return 0;
 }
