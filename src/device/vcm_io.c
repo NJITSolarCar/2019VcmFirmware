@@ -25,6 +25,31 @@
 #include "../cvnp/cvnp.h"
 #include "../cvnp/cvnp_hal.h"
 
+/**
+ * DDEF handler 16. This transmits a fault summary of the VCM.
+ */
+bool _vcmio_cvnp_ddef16(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+	uint64_t fSum = fault_getFaultSummary();
+	*pLen = 8;
+	for(int i=0; i<8; i++) {
+		// Right shift fSum by 8*i, and mask the last byte
+		pData[i] = (fSum >> (i<<3)) & 0xFF;
+	}
+
+	return true;
+}
+
+
+/**
+ * DDEF handler 17. Given a fault index, returns the time it was last
+ * asserted
+ */
+bool _vcmio_cvnp_ddef16(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+	if(*pLen != 4) {
+
+	}
+	uint32_t faultNum = frame
+}
 
 /**
  * Initializes the vcm I/O system. This means just setting up internal
