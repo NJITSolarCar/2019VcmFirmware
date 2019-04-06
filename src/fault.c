@@ -106,6 +106,15 @@ tFaultData fault_getFaultData(uint32_t fault) {
 
 
 /**
+ * Fetches the time asserted for the specified fault
+ */
+uint32_t fault_getFaultTime(uint32_t fault) {
+	return g_faults[fault].ui32TSet;
+}
+
+
+
+/**
  * Registers a set of handler functions for a certain fault number.
  */
 void fault_regHook(uint32_t faultNum, void (*pfnOnAssert)(tFaultData), void (*pfnOnDeassert)(void)) {

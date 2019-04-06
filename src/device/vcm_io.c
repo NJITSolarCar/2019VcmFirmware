@@ -25,6 +25,8 @@
 #include "../cvnp/cvnp.h"
 #include "../cvnp/cvnp_hal.h"
 
+#include "../util.h"
+
 /**
  * DDEF handler 16. This transmits a fault summary of the VCM.
  */
@@ -44,11 +46,22 @@ bool _vcmio_cvnp_ddef16(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
  * DDEF handler 17. Given a fault index, returns the time it was last
  * asserted
  */
-bool _vcmio_cvnp_ddef16(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+bool _vcmio_cvnp_ddef17(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
 	if(*pLen != 4) {
-
+		return cvnp_errorFrameHandler(frame, pLen, pData);
 	}
-	uint32_t faultNum = frame
+
+	// Extract the fault's ID
+	uint32_t faultId;
+	UTIL_BYTEARR_TO_INT(frame->data, faultId)
+
+	// Extract the timestamp for that fault
+	uint32_t fTime = fault_getFaultTime(faultId);
+	UTIL_INT_TO_BYTEARR(pData, fTime);
+
+	*pLen = 4;
+	return true;
+
 }
 
 /**
