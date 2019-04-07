@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <machine/endian.h>
 
 #include "bms.h"
 #include "ina225.h"
@@ -47,7 +48,7 @@ bool _vcmio_cvnp_ddef16(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
  * asserted
  */
 bool _vcmio_cvnp_ddef17(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
-	if(*pLen != 4) {
+	if(frame->head.dlc != 4) {
 		return cvnp_errorFrameHandler(frame, pLen, pData);
 	}
 
@@ -56,13 +57,64 @@ bool _vcmio_cvnp_ddef17(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
 	UTIL_BYTEARR_TO_INT(frame->data, faultId)
 
 	// Extract the timestamp for that fault
-	uint32_t fTime = fault_getFaultTime(faultId);
+	uint64_t fTime = fault_getFaultTime(faultId);
 	UTIL_INT_TO_BYTEARR(pData, fTime);
 
-	*pLen = 4;
+	*pLen = 8;
 	return true;
 
 }
+
+
+
+/**
+ * DDEF handler 18. Given a fault index, returns the data from the fault
+ */
+bool _vcmio_cvnp_ddef18(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+	if(frame->head.dlc != 4) {
+		return cvnp_errorFrameHandler(frame, pLen, pData);
+	}
+
+	// Extract the fault's ID
+	uint32_t faultId;
+	UTIL_BYTEARR_TO_INT(frame->data, faultId);
+
+	// Extract the timestamp for that fault
+	uint64_t fDat = fault_getFaultData(faultId).ui64;
+	UTIL_INT_TO_BYTEARR(pData, fDat);
+
+	*pLen = 8;
+	return true;
+
+}
+
+
+
+/**
+ * DDEF 41	PACK_PWR_SUM
+ * Request: There are no specific requirements to request this frame.
+ * Response: A set of values containing summary statistics about power distribution and flow inside the battery pack.
+ *
+ */
+bool _vcmio_cvnp_ddef41(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+
+	tBMSData *bmsDat = bms_data();
+	uint16_t tmp;
+
+	pData[0] = (uint8_t)bmsDat->soc;
+
+	// Copy pack current
+	tmp = (uint16_t)bmsDat->iBat;
+	UTIL_INT_TO_BYTEARR(pData+1, tmp);
+
+	// Copy pack voltage
+	tmp = (uint16_t)bmsDat->iBat;
+	UTIL_INT_TO_BYTEARR(pData+1, tmp);
+	return true;
+
+}
+
+
 
 /**
  * Initializes the vcm I/O system. This means just setting up internal
