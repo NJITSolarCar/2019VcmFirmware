@@ -16,10 +16,10 @@
  * size
  */
 #define UTIL_BYTEARR_TO_INT(ARR, DAT)													\
-		DAT = 0;																		\
+		(DAT) = 0;																		\
 		for(int util_bArr2Dat=sizeof(DAT)-1; util_bArr2Dat>=0; util_bArr2Dat--) {		\
-			DAT <<= 8;																	\
-			DAT |= ARR[util_bArr2Dat];													\
+			(DAT) <<= 8;																	\
+			(DAT) |= (ARR)[util_bArr2Dat];													\
 		}
 
 /**
@@ -27,7 +27,7 @@
  */
 #define UTIL_INT_TO_BYTEARR(ARR, DAT)													\
 		for(int util_dat2bArr=0; util_dat2bArr < sizeof(DAT); util_dat2bArr++) 			\
-			ARR[util_dat2bArr] = ((DAT) >> ((sizeof(DAT)-util_dat2bArr) << 3)) & 0xFF; // Arr[i] = DAT >>(8*(sizeof(DAT)-i)) & 0xFF
+			(ARR)[util_dat2bArr] = ((DAT) >> ((sizeof(DAT)-util_dat2bArr) << 3)) & 0xFF; // Arr[i] = DAT >>(8*(sizeof(DAT)-i)) & 0xFF
 
 
 /**

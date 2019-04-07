@@ -13,7 +13,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <machine/endian.h>
 
 #include "bms.h"
 #include "ina225.h"
@@ -92,8 +91,11 @@ bool _vcmio_cvnp_ddef18(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
 
 /**
  * DDEF 41	PACK_PWR_SUM
+ *
  * Request: There are no specific requirements to request this frame.
- * Response: A set of values containing summary statistics about power distribution and flow inside the battery pack.
+ *
+ * Response: A set of values containing summary statistics about power
+ *  distribution and flow inside the battery pack.
  *
  */
 bool _vcmio_cvnp_ddef41(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
@@ -110,6 +112,65 @@ bool _vcmio_cvnp_ddef41(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
 	// Copy pack voltage
 	tmp = (uint16_t)bmsDat->iBat;
 	UTIL_INT_TO_BYTEARR(pData+1, tmp);
+	return true;
+
+}
+
+
+
+/**
+ * 3.2.42	DDEF 42	PACK_TEMP_SUM
+ *
+ * Request: There are no specific requirements to request this frame.
+ *
+ * Response: A set of values detailing the temperature information of the battery
+ * pack and the BMS. This only provides summary information;
+ * queries for specific cell temperature should query the CELL_TEMP_n frames
+ */
+bool _vcmio_cvnp_ddef42(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+
+	tBMSData *bmsDat = bms_data();
+	*pLen = 7;
+
+	pData[0] = bmsDat->tMinIdx;
+	pData[1] = bmsDat->tMin;
+	pData[2] = bmsDat->tMaxIdx;
+	pData[3] = bmsDat->tMax;
+	pData[4] = 0; // TODO: Add BMS internal temperature reading
+	int16_t tAvg = bmsDat->tAvg * 100.0f;
+	UTIL_INT_TO_BYTEARR(pData+5, tAvg);
+
+	return true;
+
+}
+
+
+
+/**
+ * 3.2.43	DDEF 43	CELL_VOLT_SUM
+ *
+ * Request: There are no specific requirements to request this frame.
+ *
+ * Response: A set of values summarizing the more extreme cell voltages
+ * in the pack. Note that this does not include detailed information
+ * about each cell; query for CELL_VOLT_n to see this information.
+ */
+bool _vcmio_cvnp_ddef43(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+
+	tBMSData *bmsDat = bms_data();
+	*pLen = 6;
+	uint16_t tmp;
+
+	// Low cell voltage
+	pData[0] = bmsDat->vMinIdx;
+	tmp = (uint16_t)(1.0E4f * bmsDat->cellData[bmsDat->vMinIdx].voltage);
+	UTIL_INT_TO_BYTEARR(pData+1, tmp);
+
+	// High cell voltage
+	pData[3] = bmsDat->vMaxIdx;
+	tmp = (uint16_t)(1.0E4f * bmsDat->cellData[bmsDat->vMaxIdx].voltage);
+	UTIL_INT_TO_BYTEARR(pData+4, tmp);
+
 	return true;
 
 }

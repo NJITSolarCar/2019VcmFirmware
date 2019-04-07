@@ -69,6 +69,7 @@ typedef struct {
     tBmsFlag0 flag0;
     tBmsFlag4 flag4;
     float vCellAvg;
+    float tAvg; // TODO: Implement average temperature
     float vBat;
     float iBat;
     float soc;
