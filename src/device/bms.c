@@ -111,7 +111,7 @@ static void _bms_parseFrame0(tCanFrame *frame) {
 
 	// Check pack voltage
 	if(g_bmsData.vBat <= BMS_PACK_MIN_WARN_VOLTS) {
-		dat.pui32[0] = 100 * g_bmsData.vBat;
+		dat.pfloat[0] = g_bmsData.vBat;
 		uint32_t fault = g_bmsData.vBat <= BMS_PACK_MIN_VOLTS ?
 				FAULT_BMS_PACK_UNDER_VOLT :
 				FAULT_BMS_PACK_UNDER_VOLT_WARN;
@@ -119,7 +119,7 @@ static void _bms_parseFrame0(tCanFrame *frame) {
 	}
 
 	if(g_bmsData.vBat >= BMS_PACK_MAX_WARN_VOLTS) {
-		dat.pui32[0] = 100 * g_bmsData.vBat;
+		dat.pfloat[0] = g_bmsData.vBat;
 		uint32_t fault = g_bmsData.vBat >= BMS_PACK_MAX_VOLTS ?
 				FAULT_BMS_PACK_OVER_VOLT :
 				FAULT_BMS_PACK_OVER_VOLT_WARN;
@@ -172,13 +172,13 @@ static void _bms_parseFrame1(tCanFrame *frame) {
 	// Check temperature limits
 	if(g_bmsData.tMin < BMS_CELL_MIN_TEMP) {
 		dat.pui8[0] = g_bmsData.tMinIdx;
-		dat.pui32[1] = 10 * (uint32_t)g_bmsData.tMin;
+		dat.pui32[1] = g_bmsData.tMin;
 		fault_assert(FAULT_BMS_LOW_TEMP, dat);
 	}
 
 	if(g_bmsData.tMax > BMS_CELL_MAX_TEMP) {
 		dat.pui8[0] = g_bmsData.tMaxIdx;
-		dat.pui32[1] = 10 * (uint32_t)g_bmsData.tMax;
+		dat.pui32[1] = g_bmsData.tMax;
 		fault_assert(FAULT_BMS_HIGH_TEMP, dat);
 	}
 
@@ -189,6 +189,14 @@ static void _bms_parseFrame1(tCanFrame *frame) {
 		// so just use the raw byte from the transmission
 		dat.pui8[1] = frame->data[4];
 		fault_assert(FAULT_BMS_GENERAL, dat);
+	}
+
+	// Check imbalance
+	float imbalance = g_bmsData.cellData[g_bmsData.vMaxIdx].voltage -
+			g_bmsData.cellData[g_bmsData.vMinIdx].voltage;
+	if(imbalance > BMS_IMBALANCE_THRESH) {
+		dat.pfloat[0] = imbalance;
+		fault_assert(FAULT_BMS_IMBALANCE, dat);
 	}
 }
 
@@ -219,7 +227,7 @@ static void _bms_parseCellBroadcast(tCanFrame *frame) {
 	// Check voltage limits. Only check if this is the lowest /
 	// highest cell
 	tFaultData fDat;
-	fDat.pui32[0] = 1.0E4f * dat->voltage;
+	fDat.pfloat[0] = dat->voltage;
 	if(frame->data[0] == g_bmsData.vMinIdx && dat->voltage < BMS_MIN_CELL_WARN_VOLTS) {
 		uint32_t fault = g_bmsData.vBat < BMS_PACK_MIN_VOLTS ?
 				FAULT_BMS_PACK_UNDER_VOLT :
@@ -232,7 +240,6 @@ static void _bms_parseCellBroadcast(tCanFrame *frame) {
 				FAULT_BMS_CELL_OVER_VOLT_WARN;
 		fault_assert(fault, fDat);
 	}
-
 }
 
 

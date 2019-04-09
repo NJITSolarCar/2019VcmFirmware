@@ -17,20 +17,20 @@
  * in the system, as well as a flag for the number of faults
  */
 typedef enum {
-    FAULT_BMS_CELL_OVER_VOLT_WARN, // data: ui32[0]: cell voltage (units 0.1mV)
-    FAULT_BMS_CELL_UNDER_VOLT_WARN, // data: ui32[0]: cell voltage (units 0.1mV)
-    FAULT_BMS_PACK_OVER_VOLT_WARN, // data: ui32[0]: pack voltage (units 10mV)
-    FAULT_BMS_PACK_UNDER_VOLT_WARN, // data: ui32[0]: pack voltage (units 10mV)
+    FAULT_BMS_CELL_OVER_VOLT_WARN, // data: float[0]: cell voltage
+    FAULT_BMS_CELL_UNDER_VOLT_WARN, // data: float[0]: cell voltage
+    FAULT_BMS_PACK_OVER_VOLT_WARN, // data: float[0]: pack voltage
+    FAULT_BMS_PACK_UNDER_VOLT_WARN, // data: float[0]: pack voltage
     FAULT_BMS_PACK_SHORT,
     FAULT_BMS_COMM, // data: ui64: true if wasKilled
     FAULT_BMS_OVER_CURRENT_CHG,
     FAULT_BMS_OVER_CURRENT_DISCHG,
-    FAULT_BMS_CELL_OVER_VOLT, // data: ui32[0]: cell voltage (units 0.1mV)
-    FAULT_BMS_CELL_UNDER_VOLT, // data: ui32[0]: cell voltage (units 0.1mV)
-    FAULT_BMS_PACK_OVER_VOLT, // data: ui32[0]: pack voltage (units 10mV)
-    FAULT_BMS_PACK_UNDER_VOLT, // data: ui32[0]: pack voltage (units 10mV)
-    FAULT_BMS_LOW_TEMP, // data: ui8[0]: thermistor ID; ui32[1]: temperature (units = 0.1 deg C)
-	FAULT_BMS_HIGH_TEMP, // data: ui8[0]: thermistor ID; ui8[1]: isBmsTempFault; ui32[1]: temperature (units = 0.1 deg C)
+    FAULT_BMS_CELL_OVER_VOLT, // data: float[0]: cell voltage
+    FAULT_BMS_CELL_UNDER_VOLT, // data: float[0]: cell voltage
+    FAULT_BMS_PACK_OVER_VOLT, // data: float[0]: pack voltage
+    FAULT_BMS_PACK_UNDER_VOLT, // data: float[0]: pack voltage
+    FAULT_BMS_LOW_TEMP, // data: ui8[0]: thermistor ID; float[1]: temperature
+	FAULT_BMS_HIGH_TEMP, // data: ui8[0]: thermistor ID; ui8[1]: isBmsTempFault; float[1]: temperature
     FAULT_BMS_IMBALANCE,
     FAULT_BMS_GENERAL,
     FAULT_MPPT_TEMP_WARN,
