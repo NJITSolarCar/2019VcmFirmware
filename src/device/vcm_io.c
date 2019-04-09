@@ -90,7 +90,7 @@ bool _vcmio_cvnp_ddef18(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
 
 
 /**
- * DDEF 41	PACK_PWR_SUM
+ * PACK_PWR_SUM
  *
  * Request: There are no specific requirements to request this frame.
  *
@@ -119,7 +119,7 @@ bool _vcmio_cvnp_ddef41(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
 
 
 /**
- * 3.2.42	DDEF 42	PACK_TEMP_SUM
+ * DDEF 42	PACK_TEMP_SUM
  *
  * Request: There are no specific requirements to request this frame.
  *
@@ -147,7 +147,7 @@ bool _vcmio_cvnp_ddef42(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
 
 
 /**
- * 3.2.43	DDEF 43	CELL_VOLT_SUM
+ * DDEF 43	CELL_VOLT_SUM
  *
  * Request: There are no specific requirements to request this frame.
  *
@@ -174,6 +174,88 @@ bool _vcmio_cvnp_ddef43(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
 	return true;
 
 }
+
+
+
+/**
+ * Builds cell voltage frame number n, where n is from 1 to 5 and
+ * corresponds to the numbering given on the CVNp specification
+ */
+bool _vcmio_cellVoltFrameN(uint32_t n, uint32_t *pLen, uint8_t pData[8]) {
+	tBMSData *bmsDat = bms_data();
+	*pLen = 8;
+	uint16_t tmp;
+
+	// Copy each value
+	for(int i=(n-1)*4; i<4*n; i++) {
+		tmp = (uint16_t)(1.0E4f*bmsDat->cellData[i].voltage);
+		UTIL_INT_TO_BYTEARR(pData+(2*i), tmp);
+	}
+
+	return true;
+}
+
+
+
+/**
+ * DDEF 44	CELL_VOLT_1
+ * Request: There are no specific requirements to request this frame.
+ * Response: Instantaneous voltages for cells 0-3.
+ */
+bool _vcmio_cvnp_ddef44(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+	return _vcmio_cellVoltFrameN(1, pLen, pData);
+}
+
+
+
+/**
+ * DDEF 45	CELL_VOLT_2
+ * Request: There are no specific requirements to request this frame.
+ * Response: Instantaneous voltages for cells 4-7.
+ */
+bool _vcmio_cvnp_ddef45(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+	return _vcmio_cellVoltFrameN(2, pLen, pData);
+}
+
+
+
+/**
+ * DDEF 46	CELL_VOLT_3
+ * Request: There are no specific requirements to request this frame.
+ * Response: Instantaneous voltages for cells 8-12.
+ */
+bool _vcmio_cvnp_ddef46(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+	return _vcmio_cellVoltFrameN(3, pLen, pData);
+}
+
+
+
+
+/**
+ * DDEF 47	CELL_VOLT_4
+ * Request: There are no specific requirements to request this frame.
+ * Response: Instantaneous voltages for cells 13-16.
+ */
+bool _vcmio_cvnp_ddef47(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+	return _vcmio_cellVoltFrameN(4, pLen, pData);
+}
+
+
+
+/**
+ * DDEF 48	CELL_VOLT_5
+ * Request: There are no specific requirements to request this frame.
+ * Response: Instantaneous voltages for cells 17-20.
+ */
+bool _vcmio_cvnp_ddef48(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+	return _vcmio_cellVoltFrameN(5, pLen, pData);
+}
+
+
+
+
+
+
 
 
 
