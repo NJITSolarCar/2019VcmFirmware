@@ -85,6 +85,12 @@ void kbl_tick();
 tMotorData *kbl_leftMotData();
 tMotorData *kbl_rightMotData();
 
+/**
+ * Establish communication with and verify correct operation of the
+ * Motor Controllers. Returns true if POST was successful, false otherwise
+ */
+bool kbl_post();
+
 #endif /* SRC_DEVICE_H_KBL_H_ */
 
 

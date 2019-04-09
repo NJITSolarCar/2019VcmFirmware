@@ -111,7 +111,7 @@ static void _bms_parseFrame0(tCanFrame *frame) {
 
 	// Check pack voltage
 	if(g_bmsData.vBat <= BMS_PACK_MIN_WARN_VOLTS) {
-		dat.ui32[0] = 100 * g_bmsData.vBat;
+		dat.pui32[0] = 100 * g_bmsData.vBat;
 		uint32_t fault = g_bmsData.vBat <= BMS_PACK_MIN_VOLTS ?
 				FAULT_BMS_PACK_UNDER_VOLT :
 				FAULT_BMS_PACK_UNDER_VOLT_WARN;
@@ -119,7 +119,7 @@ static void _bms_parseFrame0(tCanFrame *frame) {
 	}
 
 	if(g_bmsData.vBat >= BMS_PACK_MAX_WARN_VOLTS) {
-		dat.ui32[0] = 100 * g_bmsData.vBat;
+		dat.pui32[0] = 100 * g_bmsData.vBat;
 		uint32_t fault = g_bmsData.vBat >= BMS_PACK_MAX_VOLTS ?
 				FAULT_BMS_PACK_OVER_VOLT :
 				FAULT_BMS_PACK_OVER_VOLT_WARN;
@@ -184,10 +184,10 @@ static void _bms_parseFrame1(tCanFrame *frame) {
 
 	// For now, lump everything in flag4 to a general fault. in the
 	// future, can perhaps make these into their own faults.
-	if(g_bmsData.flag4) {
+	if(frame->data[4]) {
 		// Can't guarantee the order of items in a bitfield,
 		// so just use the raw byte from the transmission
-		dat.ui8[1] = frame->data[4];
+		dat.pui8[1] = frame->data[4];
 		fault_assert(FAULT_BMS_GENERAL, dat);
 	}
 }

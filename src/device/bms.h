@@ -122,6 +122,12 @@ void bms_tick(uint32_t now);
 tBMSData *bms_data();
 
 
+/**
+ * Establish communication with and verify correct operation of the
+ * BMS. Returns true if POST was successful, false otherwise
+ */
+bool bms_post();
+
 
 #endif /* SRC_DEVICE_BMS_H_ */
 

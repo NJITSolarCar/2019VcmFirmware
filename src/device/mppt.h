@@ -68,4 +68,11 @@ void mppt_tick();
  */
 tMpptData *mppt_data(uint32_t mpptNum);
 
+
+/**
+ * Establish communication with and verify correct operation of the
+ * MPPTs. Returns true if POST was successful, false otherwise
+ */
+bool mppt_post();
+
 #endif /* SRC_DEVICE_MPPT_H_ */
