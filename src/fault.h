@@ -34,11 +34,11 @@ typedef enum {
     FAULT_BMS_IMBALANCE,
     FAULT_BMS_GENERAL,
     FAULT_MPPT_TEMP_WARN,
-    FAULT_MPPT_TEMP,
-    FAULT_MPPT_BATT_CHARGED,
-    FAULT_MPPT_NO_BATT,
-    FAULT_MPPT_LOW_SOLAR_VOLTS,
-    FAULT_MPPT_COMM,
+    FAULT_MPPT_TEMP, // data: ui32[0]: MPPT ID; float[1]: MPPT temperature
+    FAULT_MPPT_BATT_CHARGED, // data: ui32[0]: MPPT ID; float[1]: vBat
+    FAULT_MPPT_NO_BATT, // data: ui32[0]: MPPT ID
+    FAULT_MPPT_LOW_SOLAR_VOLTS, // data: ui32[0]: MPPT ID; float[1]: vSolar
+    FAULT_MPPT_COMM, // data: ui32[0]: true if wasKilled; ui32[1]: MPPT ID
     FAULT_TELE_LORA,
     FAULT_TELE_PI,
     FAULT_TELE_COMM,

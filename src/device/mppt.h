@@ -32,6 +32,9 @@
 #define MPPT_FLALG_NOC				5
 #define MPPT_FLALG_UNDV				4
 
+// Fault thresholds
+#define MPPT_TEMP_WARN				65.0f
+
 /**
  * Status information about an MPPT
  */

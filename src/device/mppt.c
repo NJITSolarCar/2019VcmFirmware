@@ -13,9 +13,50 @@
 #include "../cvnp/cvnp.h"
 #include "../cvnp/cvnp_hal.h"
 #include "mppt.h"
+#include "../fault.h"
 
 static tMpptData g_mpptDat[MPPT_NUM_MPPT];
 
+void _mppt_getResponseFaults(uint32_t mpptNum, tMpptData* dat)
+{
+	tFaultData fDat;
+	fDat.pui32[0] = mpptNum;
+
+	// Check battery charged
+	if (dat->bvlr)
+	{
+		fDat.pfloat[1] = dat->vBat;
+		fault_assert(FAULT_MPPT_BATT_CHARGED, fDat);
+	}
+	// Check battery charged
+	if (dat->bvlr)
+	{
+		fDat.pfloat[1] = dat->vBat;
+		fault_assert(FAULT_MPPT_BATT_CHARGED, fDat);
+	}
+	// Check solar voltage
+	if (dat->undv)
+	{
+		fDat.pfloat[1] = dat->vSolar;
+		fault_assert(FAULT_MPPT_LOW_SOLAR_VOLTS, fDat);
+	}
+	// Check battery connected
+	if (dat->noc)
+	{
+		fault_assert(FAULT_MPPT_NO_BATT, fDat);
+	}
+	// Assert either a warning, fault, or none for temperature
+	if (dat->ovt)
+	{
+		fDat.pfloat[1] = dat->temp;
+		fault_assert(FAULT_MPPT_TEMP, fDat);
+	}
+	else if (dat->temp > MPPT_TEMP_WARN)
+	{
+		fDat.pfloat[1] = dat->temp;
+		fault_assert(FAULT_MPPT_TEMP_WARN, fDat);
+	}
+}
 
 /**
  * Parses an MPPT response frame. Will determine which MPPT this is from
@@ -59,8 +100,10 @@ static void _mppt_parseResponse(tCanFrame *frame) {
 	dat->vBat = (float)tmp;
 
 	// Temperature
-	dat->temp = (float)frame->data[6];
+	dat->temp = (float) (frame->data[6]);
 
+	// Check faults
+	_mppt_getResponseFaults(mpptNum, dat, frame);
 }
 
 
@@ -69,8 +112,10 @@ static void _mppt_parseResponse(tCanFrame *frame) {
  * fault if it was not killed, or a CVNP fault if it was.
  */
 static void _mppt_onMpptTimeout(bool wasKilled, uint32_t mpptNum) {
-	// For now, just assert a common fault for any that fail. In the
-	// future, separate faults can potentially be generated
+	tFaultData dat;
+	dat.pui32[0] = wasKilled;
+	dat.pui32[1] = mpptNum;
+	fault_assert(FAULT_MPPT_COMM, dat);
 }
 
 
