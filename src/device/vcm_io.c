@@ -254,8 +254,19 @@ bool _vcmio_cvnp_ddef48(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
 
 
 
+/**
+ * 3.2.61 DDEF 61 HV_CURRENT_DIST
+ * Request: There are no specific requirements to request this frame.
+ * Response: Summary information about the distribution of current around the car for different systems,
+ * calculated to the highest precision and detail possible given the available sensory information on the
+ * vehicle. The values displayed here only represent current flow at a system wide level; individual devices
+ * (such as multiple motors or MPPTs) will not have their current statistics elaborated on. Currents are
+ * represented as signed integers, where 1 LSB corresponds to 10mA.
+ */
+bool _vcmio_cvnp_ddef61(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+	// Calculate system currents
 
-
+}
 
 
 

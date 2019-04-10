@@ -103,7 +103,7 @@ static void _mppt_parseResponse(tCanFrame *frame) {
 	dat->temp = (float) (frame->data[6]);
 
 	// Check faults
-	_mppt_getResponseFaults(mpptNum, dat, frame);
+	_mppt_getResponseFaults(mpptNum, dat);
 }
 
 

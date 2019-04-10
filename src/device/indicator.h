@@ -33,6 +33,9 @@
 // <<TO BE ADDED LATER>>
 
 
+#define INDICATOR_PWM_FULL_LOAD		255
+
+
 /**
  * Represents an RGB color (as PWM duties from 0-255) for the LED. These
  * map directly to PWM duties, where 0 is full off and 255 is full on.

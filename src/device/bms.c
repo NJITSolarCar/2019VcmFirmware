@@ -81,7 +81,9 @@ static void _bms_cvnpOnTimeout(bool wasKilled) {
  * current threshold (but below the short circuit current) for up to
  * BMS_TRANSIENT_OVERCURRENT_TIME ms, without asserting the fault.
  */
-void _bms_checkCurrentFaults(const tFaultData& dat) {
+void _bms_checkCurrentFaults() {
+	tFaultData dat;
+
 	if (g_bmsData.iBat <= BMS_DIS_OVERCURRENT_THRESH) {
 		// If g_transientOCStart is 0, this is a newly occurring condition,
 		// so set the start timer
@@ -114,6 +116,7 @@ static void _bms_checkFrame0Faults()
 {
 	// Check for faults
 	tFaultData dat;
+
 	// Check current
 	_bms_checkCurrentFaults();
 	// Check pack voltage
