@@ -23,8 +23,8 @@ typedef enum {
     FAULT_BMS_PACK_UNDER_VOLT_WARN, // data: float[0]: pack voltage
     FAULT_BMS_PACK_SHORT,
     FAULT_BMS_COMM, // data: ui64: true if wasKilled
-    FAULT_BMS_OVER_CURRENT_CHG,
-    FAULT_BMS_OVER_CURRENT_DISCHG,
+    FAULT_BMS_OVER_CURRENT_CHG, // data: float[0]: Absolute vale of current at the time of the fault
+    FAULT_BMS_OVER_CURRENT_DISCHG, // data: float[0]: Absolute vale of current at the time of the fault
     FAULT_BMS_CELL_OVER_VOLT, // data: float[0]: cell voltage
     FAULT_BMS_CELL_UNDER_VOLT, // data: float[0]: cell voltage
     FAULT_BMS_PACK_OVER_VOLT, // data: float[0]: pack voltage

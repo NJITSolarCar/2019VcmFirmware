@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "bms.h"
+#include "../util.h"
 #include "../fault.h"
 #include "../cvnp/cvnp.h"
 #include "../cvnp/cvnp_hal.h"
@@ -22,6 +23,7 @@
 // Current bms state data
 static tBMSData g_bmsData;
 
+static uint32_t g_transientOCStart;
 
 /**
  * COnverts a BMS flag 0 byte into a tBmsFlag0 structure
@@ -73,6 +75,84 @@ static void _bms_cvnpOnTimeout(bool wasKilled) {
 	fault_assert(FAULT_BMS_COMM, data);
 }
 
+/**
+ * Determine current faults about the system. These faults allow for transients to
+ * occur without asserting the fault itself. The battery current can surpass the
+ * current threshold (but below the short circuit current) for up to
+ * BMS_TRANSIENT_OVERCURRENT_TIME ms, without asserting the fault.
+ */
+void _bms_checkCurrentFaults(const tFaultData& dat) {
+	if (g_bmsData.iBat <= BMS_DIS_OVERCURRENT_THRESH) {
+		// If g_transientOCStart is 0, this is a newly occurring condition,
+		// so set the start timer
+		if (g_transientOCStart == 0)
+			g_transientOCStart = util_now();
+
+		else if (util_now()-g_transientOCStart > BMS_TRANSIENT_OVERCURRENT_TIME) {
+			dat.pfloat[0] = -g_bmsData.iBat;
+			fault_assert(FAULT_BMS_OVER_CURRENT_DISCHG, dat);
+		}
+	}
+
+	// Same behavior for charge as for discharge
+	else if (g_bmsData.iBat <= BMS_CHG_OVERCURRENT_THRESH) {
+		if (g_transientOCStart == 0)
+			g_transientOCStart = util_now();
+		else if (util_now()-g_transientOCStart> BMS_TRANSIENT_OVERCURRENT_TIME) {
+			dat.pfloat[0] = g_bmsData.iBat;
+			fault_assert(FAULT_BMS_OVER_CURRENT_CHG, dat);
+		}
+	} else
+		g_transientOCStart = 0;
+}
+
+
+
+
+
+static void _bms_checkFrame0Faults()
+{
+	// Check for faults
+	tFaultData dat;
+	// Check current
+	_bms_checkCurrentFaults();
+	// Check pack voltage
+	if (g_bmsData.vBat <= BMS_PACK_MIN_WARN_VOLTS)
+	{
+		dat.pfloat[0] = g_bmsData.vBat;
+		uint32_t fault =
+				g_bmsData.vBat <= BMS_PACK_MIN_VOLTS ?
+						FAULT_BMS_PACK_UNDER_VOLT :
+						FAULT_BMS_PACK_UNDER_VOLT_WARN;
+		fault_assert(fault, dat);
+	}
+	if (g_bmsData.vBat >= BMS_PACK_MAX_WARN_VOLTS)
+	{
+		dat.pfloat[0] = g_bmsData.vBat;
+		uint32_t fault =
+				g_bmsData.vBat >= BMS_PACK_MAX_VOLTS ?
+						FAULT_BMS_PACK_OVER_VOLT :
+						FAULT_BMS_PACK_OVER_VOLT_WARN;
+		fault_assert(fault, dat);
+	}
+	// If a flag temperature fault, copy the 3 bits as follows:
+	// bit0: thermistorFault
+	// bit1: internalTempFault
+	// bit2: overTempFault
+	if (g_bmsData.flag0.thermistorFault || g_bmsData.flag0.internalTempFault
+			|| g_bmsData.flag0.overTempFault)
+	{
+		dat.ui64 = 0; // clear fault data
+		dat.pui8[1] = g_bmsData.flag0.thermistorFault;
+		dat.pui8[1] |= g_bmsData.flag0.internalTempFault << 1;
+		dat.pui8[1] |= g_bmsData.flag0.overTempFault << 2;
+		fault_assert(FAULT_BMS_HIGH_TEMP, dat);
+	}
+}
+
+
+
+
 
 /**
  * Frame 0. Contains:
@@ -107,39 +187,7 @@ static void _bms_parseFrame0(tCanFrame *frame) {
 	g_bmsData.iBat = ((float) tmp) * 1E-4f;
 
 	// Check for faults
-	tFaultData dat;
-
-	// Check pack voltage
-	if(g_bmsData.vBat <= BMS_PACK_MIN_WARN_VOLTS) {
-		dat.pfloat[0] = g_bmsData.vBat;
-		uint32_t fault = g_bmsData.vBat <= BMS_PACK_MIN_VOLTS ?
-				FAULT_BMS_PACK_UNDER_VOLT :
-				FAULT_BMS_PACK_UNDER_VOLT_WARN;
-		fault_assert(fault, dat);
-	}
-
-	if(g_bmsData.vBat >= BMS_PACK_MAX_WARN_VOLTS) {
-		dat.pfloat[0] = g_bmsData.vBat;
-		uint32_t fault = g_bmsData.vBat >= BMS_PACK_MAX_VOLTS ?
-				FAULT_BMS_PACK_OVER_VOLT :
-				FAULT_BMS_PACK_OVER_VOLT_WARN;
-		fault_assert(fault, dat);
-	}
-
-	// If a flag temperature fault, copy the 3 bits as follows:
-	// bit0: thermistorFault
-	// bit1: internalTempFault
-	// bit2: overTempFault
-	if(g_bmsData.flag0.thermistorFault ||
-			g_bmsData.flag0.internalTempFault ||
-			g_bmsData.flag0.overTempFault) {
-		dat.ui64 = 0; // clear fault data
-		dat.pui8[1] = g_bmsData.flag0.thermistorFault;
-		dat.pui8[1] |= g_bmsData.flag0.internalTempFault << 1;
-		dat.pui8[1] |= g_bmsData.flag0.overTempFault << 2;
-		fault_assert(FAULT_BMS_HIGH_TEMP, dat);
-
-	}
+	_bms_checkFrame0Faults();
 }
 
 

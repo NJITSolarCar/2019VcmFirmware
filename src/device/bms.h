@@ -24,7 +24,7 @@
 
 // Fault Thresholds
 #define BMS_CHG_OVERCURRENT_THRESH		75.0f	// Magnitude of maximum allowed charging current
-#define BMS_DIS_OVERCURRENT_THRESH		75.0f	// Magnitude of maximum allowed discharge current
+#define BMS_DIS_OVERCURRENT_THRESH		-75.0f	// Magnitude of maximum allowed discharge current
 #define BMS_TRANSIENT_OVERCURRENT_TIME	120		// number of milliseconds to allow a transient current greater than the max to occur before asserting a fault
 #define BMS_MIN_CELL_WARN_VOLTS			3.2f
 #define BMS_MIN_CELL_VOLTS				3.0f
