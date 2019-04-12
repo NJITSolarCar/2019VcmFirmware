@@ -17,6 +17,19 @@
 
 
 static tLEDState g_currState;
+static bool g_wasOn;
+
+/**
+ * Calculates the load value for the blink timer given a
+ * blink pattern, and whether or not to invert the duty cycle. The
+ * formula is as follows:
+ *
+ * load = (clk*duty) / (10*freq))
+ */
+uint32_t _indicator_calcBlinkTimerLoad(tBlinkPattern pattern, bool invert) {
+	uint32_t duty = invert ? 100-pattern.duty : pattern.duty;
+	return (UTIL_CLOCK_SPEED * duty) / (10*pattern.freq);
+}
 
 
 /**
@@ -29,7 +42,11 @@ void _indicator_setColor(tRGBColor color) {
 }
 
 
-
+/**
+ * Sets the LED to either PWM mode or GPIO mode. This will not
+ * load the PWM generator if in PWM mode, but will turnoff the
+ * GPIO if set to gpio mode
+ */
 void _indicator_setLEDMode(bool isPWM) {
 	if(isPWM) { // Set as PWM
 		GPIOPinTypeTimer(DASH_LED_PORT, DASH_LED_RED_PIN |
@@ -65,22 +82,19 @@ void _indicator_setLEDMode(bool isPWM) {
  * set the LED output
  */
 void _indicator_blinkISR() {
-	static bool wasOn = false;
 	uint32_t load;
 
 	TimerIntClear(DASH_LED_BLINK_TIMER_BASE, TIMER_TIMA_TIMEOUT);
 
-	// Turn off, load is clk * ((100-duty)/(10*freq))
-	if(wasOn) {
-		load = (UTIL_CLOCK_SPEED * (100 - g_currState.blinkPattern.duty)) /
-				(10 * g_currState.blinkPattern.freq);
+	// Turn off
+	if(g_wasOn) {
+		load = _indicator_calcBlinkTimerLoad(g_currState.blinkPattern, true);
 		_indicator_setLEDMode(false);
 	}
 
 	// Turn on, load is clk * (duty/(10*freq))
 	else {
-		load = (UTIL_CLOCK_SPEED * g_currState.blinkPattern.duty) /
-				(10 * g_currState.blinkPattern.freq);
+		load = _indicator_calcBlinkTimerLoad(g_currState.blinkPattern, false);
 		_indicator_setLEDMode(true);
 		_indicator_setColor(g_currState.color);
 	}
@@ -92,7 +106,9 @@ void _indicator_blinkISR() {
 
 
 
-
+/**
+ * Prepares the indicator hardware
+ */
 void indicator_init()
 {
 	// Default LED to gpio output
@@ -105,7 +121,31 @@ void indicator_init()
 }
 
 
+
+/**
+ * Applies a pattern to the indicator LED
+ */
 void indicator_setPattern(tLEDState state) {
+
+	_indicator_setLEDMode(true);
+	_indicator_setColor(state.color);
+
+
+	if(state.blinkPattern.freq == 0) {
+		TimerDisable(DASH_LED_BLINK_TIMER_BASE, DASH_LED_BLINK_TIMER_BASE);
+	} else {
+		TimerLoadSet(DASH_LED_BLINK_TIMER_BASE,
+					 DASH_LED_BLINK_TIMER_BASE,
+					 _indicator_calcBlinkTimerLoad(state.blinkPattern, !g_wasOn));
+
+		TimerEnable(DASH_LED_BLINK_TIMER_BASE, DASH_LED_BLINK_TIMER_BASE);
+	}
+
+	// Don't set this until after turning off the blink timer, as a zero
+	// frequency (which is legal) will cause a divide by 0 error in the blink
+	// timer ISR. To avoid this, if the frequency is zero, turn off the timer,
+	// and then set the state, to prevent the possibility of a spurious interrupt
+	// occuring after the state is set but before the timer is disabled.
 	g_currState = state;
 }
 
