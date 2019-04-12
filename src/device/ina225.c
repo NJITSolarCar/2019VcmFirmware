@@ -99,7 +99,7 @@ void ina_init() {
 
 	// Initialize the holdoff timer as a one shot
 	TimerConfigure(INA_TIMER_BASE, INA_TIMER_CFG);
-	TimerIntRegister(INA_TIMER_BASE, INA_TIMER_PART, _ina_onHoldoffDone)
+	TimerIntRegister(INA_TIMER_BASE, INA_TIMER_PART, _ina_onHoldoffDone);
 	TimerIntEnable(INA_TIMER_BASE, INA_TIMER_INT);
 
 	// initialize the gain configuration to 200 V/V. This will hold off
@@ -111,7 +111,9 @@ void ina_init() {
 
 
 
-
+float ina_getCurrent() {
+	return g_current;
+}
 
 
 

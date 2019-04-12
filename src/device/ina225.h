@@ -52,7 +52,7 @@ void ina_init();
  * has not been initialized, or not sampled, the values returned from this will
  * be invalid.
  */
-float ina_calcCurrent();
+float ina_getCurrent();
 
 
 /**

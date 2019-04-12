@@ -57,7 +57,7 @@ static uint32_t g_myInst;
  * DDEF handler for an error frame response. See the CVNP spec for
  * details on this handler's behavior. Will always return true.
  */
-static bool _cvnp_errorFrameHandler(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+bool cvnp_errorFrameHandler(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
 	tCompliantId id = cvnp_idToStruct(frame->id);
 
 	// pLen is the min of 8 and the input frame dlc + 3
@@ -307,7 +307,7 @@ bool cvnp_start(uint32_t myClass, uint32_t myInst) {
 		g_pfnDdefTable[i] = 0;
 
 	// Common frame binding
-	g_pfnDdefTable[CVNP_DDEF_ERROR] = &_cvnp_errorFrameHandler;
+	g_pfnDdefTable[CVNP_DDEF_ERROR] = &cvnp_errorFrameHandler;
 	g_pfnDdefTable[CVNP_DDEF_RESET] = &_cvnp_resetFrameHandler;
 	g_pfnDdefTable[CVNP_DDEF_DEVINFO] = &_cvnp_devinfoFrameHandler;
 
