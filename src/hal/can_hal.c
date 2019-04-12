@@ -16,6 +16,7 @@
 #include "../util.h"
 #include "../fault.h"
 #include "../cvnp/cvnp_hal.h"
+#include "../hal/resource.h"
 
 void _can_intHandler() {
 
@@ -26,5 +27,5 @@ void _can_intHandler() {
  * Initializes the CAN hardware
  */
 bool cvnpHal_init() {
-
+	// Setup the GPIO as CAN
 }
