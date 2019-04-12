@@ -11,6 +11,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// CLock speed 80MHz
+#define UTIL_CLOCK_SPEED					80000000
+#define UTIL_CYCLE_PER_MS					(UTIL_CLOCK_SPEED / 1000)
+
 /**
  * Copies the data in a byte array to an integer of variable
  * size
