@@ -11,13 +11,32 @@
 #define SRC_DEVICE_INA225_H_
 
 
-// Gain settings. These map to the GPIO outputs that control
-// the gain of the chip: bit 0 corresponds to GS0 and bit 1 to
-// GS1
-#define INA_GAIN_25         0x00
-#define INA_GAIN_50         0x02
-#define INA_GAIN_100        0x01
-#define INA_GAIN_200        0x04
+// Amount of microseconds to hold off sampling between
+// gain changes
+#define INA_HOLDOFF_USEC	15
+
+// If the ADC reading is greater or equal to this, gain should
+// decrease
+#define INA_ADC_HIGH_LIMIT	4085
+
+// If the ADC reading is lesser or equal to this, gain should
+// increase
+#define INA_ADC_LOW_LIMIT	(4096 / 3)
+
+
+// Value of shunt resistor used
+#define INA_SHUNT			1.0E-3f
+
+/**
+ * Gain settings of the INA
+ */
+typedef enum {
+	INA_GAIN_25,
+	INA_GAIN_50,
+	INA_GAIN_100,
+	INA_GAIN_200
+}tInaGain;
+
 
 
 /**
