@@ -24,6 +24,7 @@
 #include <driverlib/pin_map.h>
 #include <driverlib/adc.h>
 #include <driverlib/timer.h>
+#include <driverlib/can.h>
 
 #include <inc/hw_memmap.h>
 #include <inc/hw_ints.h>
@@ -97,4 +98,24 @@
 #define THERM_ADC_MODULE				ADC1_BASE
 #define THERM_ADC_SEQUENCE				2
 
+// CAN
+#define CAN_RX_PORT						GPIO_PORTE_BASE
+#define CAN_RX_PIN						GPIO_PIN_4
+#define CAN_RX_PINCONFIG				GPIO_PE4_CAN0RX
+
+#define CAN_TX_PORT						GPIO_PORTE_BASE
+#define CAN_TX_PIN						GPIO_PIN_5
+#define CAN_TX_PINCONFIG				GPIO_PE5_CAN0TX
+
+#define CAN_STB_PORT					GPIO_PORTB_BASE
+#define CAN_STB_PIN						GPIO_PIN_4
+
+#define CAN_RX_IFACE					CAN0_BASE
+#define CAN_TX_IFACE					CAN1_BASE
+
 #endif /* SRC_HAL_RESOURCE_H_ */
+
+
+
+
+

@@ -36,4 +36,11 @@
  */
 #define CVNP_NONCOMPLIANT_BUF_SIZE          16
 
+
+// Nominal bitrate of the physical bus
+#define CVNP_BITRATE						1000000
+
+
+
+
 #endif /* CVNP_CVNP_CONFIG_H_ */
