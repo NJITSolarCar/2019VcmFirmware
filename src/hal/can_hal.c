@@ -19,11 +19,14 @@
 #include "../cvnp/cvnp_config.h"
 #include "../hal/resource.h"
 
-#define CAN_MSG_BUF_SIZE		32
-#define CAN_TX_BUF_SIZE			6
+#define CAN_TX_BUF_SIZE			3
+#define CAN_RX_BUF_SIZE			5
 
-static tCANMsgObject g_txMsgBuf[CAN_TX_BUF_SIZE];
-static tCANMsgObject g_rxMsgBuf[CAN_MSG_BUF_SIZE - CAN_TX_BUF_SIZE];
+// Message buffers
+static uint8_t g_rxBuf[8], g_txBuf[8];
+
+static tCANMsgObject g_txMsg;
+static tCANMsgObject g_rxMsg;
 
 
 void _can_rxIntHandler() {
@@ -31,8 +34,25 @@ void _can_rxIntHandler() {
 }
 
 
-void _can_txIntHandler() {
 
+
+void _can_tivaFrameToCVNP(tCanFrame *cvnp, tCANMsgObject *tiva) {
+	cvnp->id = tiva->ui32MsgID;
+	cvnp->head.dlc = tiva->ui32MsgLen;
+	cvnp->head.ide = !!(tiva->ui32Flags & MSG_OBJ_EXTENDED_ID);
+	cvnp->head.rtr = 0; // For now, RTR is unused
+
+	for(int i=0; i<8; i++)
+		cvnp->data[i] = tiva->pui8MsgData[i];
+}
+
+void _can_cvnpFrameToTiva(tCanFrame *cvnp, tCANMsgObject *tiva) {
+	tiva->ui32MsgID = cvnp->id;
+	tiva->ui32MsgLen = cvnp->head.dlc;
+	tiva->ui32Flags = cvnp->head.ide ? MSG_OBJ_EXTENDED_ID : 0;
+
+	for(int i=0; i<8; i++)
+		tiva->pui8MsgData[i] = cvnp->data[i];
 }
 
 
@@ -56,9 +76,27 @@ bool cvnpHal_init() {
 	CANBitRateSet(CAN_TX_IFACE, UTIL_CLOCK_SPEED, CVNP_BITRATE);
 	CANIntRegister(CAN_TX_IFACE, _can_txIntHandler);
 
-	// Bind message objects
+	// Prepare message objects
+	g_txMsg.pui8MsgData = g_txBuf;
+	g_txMsg.ui32MsgIDMask = 0x0;
+	g_txMsg.ui32MsgLen = 8;
+	g_txMsg.ui32Flags = MSG_OBJ_TX_INT_ENABLE; // TODO: possibly need MSG_OBJ_EXTENDED_ID, but documentation is inconclusive
+
 	for(int i=0; i<CAN_TX_BUF_SIZE; i++) {
-		CANMessageSet(CAN_TX_IFACE, 1, &g_txMsgBuf[i], eMsgType);
+		CANMessageSet(CAN_TX_IFACE, i, &g_txMsg, MSG_OBJ_TYPE_TX);
+	}
+
+	g_rxMsg.pui8MsgData = g_rxBuf;
+	g_rxMsg.ui32MsgIDMask = 0x0;
+	g_rxMsg.ui32MsgLen = 8;
+	g_rxMsg.ui32Flags = MSG_OBJ_RX_INT_ENABLE; // TODO: possibly need MSG_OBJ_EXTENDED_ID, but documentation is inconclusive
+
+
+	for(int i=0; i<CAN_RX_BUF_SIZE; i++) {
+		CANMessageSet(CAN_RX_IFACE,
+					  i+CAN_TX_BUF_SIZE+1,
+					  &g_rxMsg,
+					  MSG_OBJ_TYPE_RX);
 	}
 }
 
