@@ -24,7 +24,7 @@
 #define CVNP_INTERNAL_ERR_NO_NONC_HANDLER		2
 
 // Token positions in a compliant ID word
-#define CVNP_NONC_POS							28
+#define CVNP_DAT_POS							28
 #define CVNP_BROAD_POS							27
 #define CVNP_SCLS_POS							21
 #define CVNP_SINST_POS							17
@@ -59,7 +59,7 @@
  */
 typedef struct {
     uint32_t broad 	: 1;
-    uint32_t nonc 	: 1;
+    uint32_t dat 	: 1;
     uint32_t scls 	: 6;
     uint32_t sinst 	: 4;
     uint32_t rcls 	: 6;

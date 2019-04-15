@@ -336,7 +336,7 @@ void cvnp_procFrame(tCanFrame *frame) {
 	bool hit = false;
 
 	// True if the noncompliant bit is set or the frame uses an 11-bit (standard) id
-	bool isCompliant = !id.nonc || !frame->head.ide;
+	bool isCompliant = !frame->head.ide;
 
 	// True if the frame is specifically directed at this device, or is
 	// a multicast that includes this device
@@ -345,7 +345,7 @@ void cvnp_procFrame(tCanFrame *frame) {
 			(!id.rinst || id.rinst==g_myInst);
 
 	if(isCompliant && isForMe) {
-		if(frame->head.rtr)
+		if(!id.dat)
 			_cvnp_runDdefhandler(frame, id);
 		else if(id.broad)
 			_cvnp_handleBroadcast(frame, id, now);
@@ -445,7 +445,7 @@ void cvnp_tick(uint32_t now) {
  */
 inline tCompliantId cvnp_idToStruct(uint32_t id) {
 	tCompliantId ret;
-	ret.nonc = (id >> CVNP_NONC_POS) & 0x1;
+	ret.dat = (id >> CVNP_DAT_POS) & 0x1;
 	ret.broad = (id >> CVNP_BROAD_POS) & 0x1;
 	ret.scls = (id >> CVNP_SCLS_POS) & CVNP_CLASS_LEN_MASK;
 	ret.sinst = (id >> CVNP_SINST_POS) & CVNP_INST_LEN_MASK;
@@ -466,7 +466,7 @@ inline tCompliantId cvnp_idToStruct(uint32_t id) {
 inline uint32_t cvnp_structToId(tCompliantId id) {
 	uint32_t ret = id.ddef; // Zero everything but the lowest token
 	ret |= id.broad << CVNP_BROAD_POS;
-	ret |= id.nonc << CVNP_NONC_POS;
+	ret |= id.dat << CVNP_DAT_POS;
 	ret |= id.scls << CVNP_SCLS_POS;
 	ret |= id.sinst << CVNP_SINST_POS;
 
@@ -585,7 +585,7 @@ void cvnp_query(tQueryInfo *info, uint32_t len, uint8_t *pData){
 	// Build the id to use on the transmission
 	tCompliantId id;
 	id.broad = false;
-	id.nonc = false;
+	id.dat = false;
 	id.scls = g_myClass;
 	id.sinst = g_myInst;
 	id.rcls = info->rcls;
@@ -597,7 +597,7 @@ void cvnp_query(tQueryInfo *info, uint32_t len, uint8_t *pData){
 	frame.id = cvnp_structToId(id);
 	frame.head.dlc = len;
 	frame.head.ide = true;
-	frame.head.rtr = true;
+	frame.head.rtr = false;
 	for(int i=0; i<len; i++)
 		frame.data[i] = pData[i];
 
