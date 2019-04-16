@@ -15,6 +15,7 @@
 
 #include "../util.h"
 #include "../fault.h"
+#include "../cvnp/cvnp.h"
 #include "../cvnp/cvnp_hal.h"
 #include "../cvnp/cvnp_config.h"
 #include "../hal/resource.h"
@@ -29,15 +30,6 @@ static tCANMsgObject g_txMsg;
 static tCANMsgObject g_rxMsg;
 
 
-void _can_rxIntHandler() {
-
-}
-
-
-void _can_txIntHandler() {
-
-}
-
 
 void _can_tivaFrameToCVNP(tCanFrame *cvnp, tCANMsgObject *tiva) {
 	cvnp->id = tiva->ui32MsgID;
@@ -49,6 +41,9 @@ void _can_tivaFrameToCVNP(tCanFrame *cvnp, tCANMsgObject *tiva) {
 		cvnp->data[i] = tiva->pui8MsgData[i];
 }
 
+
+
+
 void _can_cvnpFrameToTiva(tCanFrame *cvnp, tCANMsgObject *tiva) {
 	tiva->ui32MsgID = cvnp->id;
 	tiva->ui32MsgLen = cvnp->head.dlc;
@@ -57,6 +52,35 @@ void _can_cvnpFrameToTiva(tCanFrame *cvnp, tCANMsgObject *tiva) {
 	for(int i=0; i<8; i++)
 		tiva->pui8MsgData[i] = cvnp->data[i];
 }
+
+
+
+void _can_rxIntHandler() {
+	// Get the cause
+	uint32_t intStat = CANIntStatus(CAN_RX_IFACE, CAN_INT_STS_CAUSE);
+
+	if(intStat > 32) { // For status / error interrupt
+		// TODO: assert CAN fault
+	} else {
+		// Process the frame
+		tCanFrame frame;
+		CANMessageGet(CAN_RX_IFACE, intStat, &g_rxMsg, true);
+		_can_tivaFrameToCVNP(&frame, &g_rxMsg);
+		cvnp_procFrame(&frame);
+	}
+}
+
+
+
+void _can_txIntHandler() {
+	// The only interrupts here should be errors, so flag a fault
+	// TODO: flag a fault
+	uint32_t intStat = CANIntStatus(CAN_TX_IFACE, CAN_INT_STS_CAUSE);
+	CANIntClear(CAN_TX_IFACE, intStat);
+}
+
+
+
 
 
 /**
@@ -84,14 +108,19 @@ bool cvnpHal_init() {
 	g_rxMsg.pui8MsgData = g_rxBuf;
 	g_rxMsg.ui32MsgIDMask = 0x0;
 	g_rxMsg.ui32MsgLen = 8;
-	g_rxMsg.ui32Flags = MSG_OBJ_RX_INT_ENABLE; // TODO: possibly need MSG_OBJ_EXTENDED_ID, but documentation is inconclusive
+	g_rxMsg.ui32Flags = MSG_OBJ_RX_INT_ENABLE;
 
 
-	for(int i=0; i<CAN_RX_BUF_SIZE; i++) {
+	for(int i=0; i<CAN_MAX_BUF_SIZE; i++) {
 		CANMessageSet(CAN_RX_IFACE,
 					  i+1,
 					  &g_rxMsg,
 					  MSG_OBJ_TYPE_RX);
+
+		// Make half of the messages take extended IDs, with the other half
+		// regular
+		if(i == 16)
+			g_rxMsg.ui32Flags |= MSG_OBJ_EXTENDED_ID;
 	}
 
 	return true;
@@ -112,7 +141,10 @@ void cvnpHal_sendFrame(tCanFrame frame) {
 		i++;
 
 	if(i>= 32) {
-		// TODO: Buffer full, possible VCM comm error
+		tFaultData dat;
+		// TODO: Add proper data for this fault
+		dat.ui64 = 0;
+		fault_assert(FAULT_VCM_COMM, dat);
 	}
 
 	CANMessageSet(CAN_TX_IFACE, i, &g_txMsg, MSG_OBJ_TYPE_TX);
@@ -121,6 +153,24 @@ void cvnpHal_sendFrame(tCanFrame frame) {
 
 
 
+
+uint32_t cvnpHal_now() {
+	return util_now();
+}
+
+
+
+
+void cvnpHal_handleError(uint32_t errNum) {
+	// TODO: assert fault
+}
+
+
+
+
+void cvnpHal_resetSystem() {
+	// TODO: find a safe way to reset the system
+}
 
 
 
