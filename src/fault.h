@@ -49,6 +49,9 @@ typedef enum {
     FAULT_GEN_AUX_OVER_DISCHARGE,
 	FAULT_CVNP_INTERNAL,
 	FAULT_VCM_COMM,
+	FAULT_VCM_THERMISTOR, // data: ui32[0]: bits 0-2: fault state of each thermistor
+	FAULT_VCM_HIGH_TEMP, // data: ui32[0]: thermistor ID; float[1]: thermistor temperature
+	FAULT_VCM_LOW_TEMP, // data: ui32[0]: thermistor ID; float[1]: thermistor temperature
     FAULT_NUM_FAULTS
 } tFaultCode;
 

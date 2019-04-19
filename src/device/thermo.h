@@ -21,7 +21,15 @@
 
 #define THERM_BALLAST			10000
 #define THERM_NOMINAL_R			10000
+#define THERM_LOG_NOMINAL_R		9.21034037f // ln(THERM_NOMINAL_R)
 #define THERM_FILTER_R			270
+
+// If adc readout less or equal to this, assume thermistor fault
+#define THERM_ADC_FAULT_LEVEL	5
+
+// Temperature limits
+#define THERM_MAX_TEMP			75.0f
+#define THERM_MIN_TEMP			1.0f
 
 
 /**
@@ -37,8 +45,11 @@ void thermo_doSample();
 
 /**
  * Calculates the floating point temperatures (in celsius) of the
- * thermistors. This will not start a sample, but use the latest results.
- * Returns true if the results are valid, false otherwise
+ * thermistors. Checks for fault / over / under temperature conditions.
+ * This will not start a sample, but use the latest results.
+ * Returns true if the results are valid, false otherwise. Disconnected
+ * thermistors will cause this to return false, but over / under temp will
+ * return true.
  */
 bool thermo_getTemp(float temp[THERM_NUM_THERM]);
 
