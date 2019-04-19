@@ -129,6 +129,15 @@ tBMSData *bms_data();
 bool bms_post();
 
 
+
+/**
+ * Function to be called when the dedicated DCL line from the BMS changes
+ * state. This usually means that the short circuit current threshold has
+ * been reached, and thus needs immediate action to be taken.
+ */
+void bms_onDCLGpioChange(bool isOn);
+
+
 #endif /* SRC_DEVICE_BMS_H_ */
 
 

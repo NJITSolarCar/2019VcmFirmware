@@ -352,6 +352,16 @@ tBMSData *bms_data() {
 
 
 
+void bms_onDCLGpioChange(bool isOn) {
+	if(isOn) {
+		tFaultData dat;
+		dat.ui64 = 0; // No data used
+		fault_assert(FAULT_BMS_PACK_SHORT, dat);
+	}
+}
+
+
+
 
 
 

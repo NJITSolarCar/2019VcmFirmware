@@ -113,6 +113,10 @@
 #define CAN_RX_IFACE					CAN0_BASE
 #define CAN_TX_IFACE					CAN1_BASE
 
+// BMS
+#define BMS_DCL_PORT					GPIO_PORTF_BASE
+#define BMS_DCL_PIN						GPIO_PIN_3
+
 #endif /* SRC_HAL_RESOURCE_H_ */
 
 
