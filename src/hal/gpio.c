@@ -32,12 +32,6 @@ void _gpio_intPortF() {
 
 
 void gpio_init() {
-	// Set up relays
-	GPIOPinTypeGPIOOutput(CHG_RLY_PORT, CHG_RLY_PIN);
-	GPIOPinTypeGPIOOutput(DISCHG_RLY_PORT, DISCHG_RLY_PIN);
-	GPIOPinTypeGPIOOutput(SOLAR_RLY_PORT, SOLAR_RLY_PIN);
-	GPIOPinTypeGPIOOutput(BATPOS_RLY_PORT, BATPOS_RLY_PIN);
-	GPIOPinTypeGPIOOutput(BATNEG_RLY_PORT, BATNEG_RLY_PIN);
 
 	// Set up port F ISRs
 	GPIOIntEnable(GPIO_PORTF_BASE, BMS_DCL_PIN);
