@@ -147,7 +147,8 @@ void cvnpHal_sendFrame(tCanFrame frame) {
 		fault_assert(FAULT_VCM_COMM, dat);
 	}
 
-	CANMessageSet(CAN_TX_IFACE, i, &g_txMsg, MSG_OBJ_TYPE_TX);
+	// CAN Message objects are 1 indexed, not 0 indexed
+	CANMessageSet(CAN_TX_IFACE, i+1, &g_txMsg, MSG_OBJ_TYPE_TX);
 }
 
 
