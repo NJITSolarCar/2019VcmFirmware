@@ -97,6 +97,21 @@ bool relay_getSolar() {
 
 
 
+/**
+ * Sets all relays according to the faults set at the
+ * time of calling
+ *
+ * TODO: A potential race condition exists with this method and the
+ * fault system. If the fault status is read, and an interrupt that asserts
+ * a fault blocks the relay updates, it is possible for a relay to stay enabled
+ * when it should be cleared. As such, this function should be used sparingly, if
+ * at all.
+ */
+void relay_setFromFaults() {
+	// TODO: develop a fault-relay table and use that
+}
+
+
 
 
 
