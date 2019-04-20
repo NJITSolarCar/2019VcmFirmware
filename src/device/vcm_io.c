@@ -265,7 +265,7 @@ bool _vcmio_cvnp_ddef48(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
  */
 bool _vcmio_cvnp_ddef61(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
 	// Calculate system currents
-
+	return true;
 }
 
 

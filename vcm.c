@@ -65,6 +65,63 @@
 #define VCM_SYSTICK_LOAD			(UTIL_CYCLE_PER_MS * 10) // 10ms tick rate
 
 
+/////////////////////////////// FAULT BINDINGS ////////////////////////////////
+
+/**
+ * Base action for all faults: report it over CVNP. This will send a broadcast frame
+ * with information about this fault.
+ */
+static void vcm_defaultFaultAssertAction(tFaultData dat) {
+	// TODO: implement broadcast transmission via CVNP
+}
+
+
+/**
+ * Handler called when FAULT_BMS_PACK_SHORT is asserted.
+ * Disable all relays, set the indicator state, and do default
+ * action
+ */
+static void vcm_BmsPackShortHandler(tFaultData dat) {
+	relay_setAll(false);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+
+/**
+ * Handler called when FAULT_BMS_COMM is asserted.
+ * Disable all relays, set the indicator state, and do default
+ * action
+ */
+static void vcm_BmsCommHandler(tFaultData dat) {
+	relay_setAll(false);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+/**
+ * Handler called when FAULT_BMS_OVER_CURRENT_CHG is asserted.
+ * Disable charge / solar relays, set the indicator state, and do default
+ * action
+ */
+static void vcm_BmsOverCurrentChg(tFaultData dat) {
+	relay_setSolar(false);
+	relay_setCharge(false);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+
+/**
+ * Bind all of the fault handlers for the VCM
+ */
+static void vcm_bindFaultHandlers() {
+
+}
+
+
+
+/////////////////////////////// MAIN ALGORITHM ////////////////////////////////
 static void vcm_tick() {
 	bms_tick();
 	kbl_tick();
