@@ -12,19 +12,30 @@
 #include <driverlib/sysctl.h>
 #include <driverlib/watchdog.h>
 #include <driverlib/fpu.h>
+#include <driverlib/interrupt.h>
 
 #include "ioctl.h"
-#include "../util.h"
 #include "resource.h"
+#include "../fault.h"
+#include "../util.h"
+#include "../device/relay.h"
 
 
 /**
  * Called when the main system watchdog expires. Usually as a result
  * of a trap, crash, etc. Immediately cut the outputs, disable interrupts,
- * and trap here to preserve the system state.
+ * and assert a WDT_FAIL fault, which should send a final message over CAN
+ * that the VCM has crashed.
  */
 void _ioctl_watchdog_expire() {
+	IntMasterDisable();
+	relay_setAll(false);
 
+	tFaultData dat;
+	dat.ui64 = 0;
+	fault_assert(FAULT_VCM_WDT_FAIL, dat);
+
+	for(;;);
 }
 
 
@@ -69,14 +80,13 @@ void ioctl_reset() {
     TimerPrescaleSet(SYS_US_TIMER_BASE, TIMER_A, 80);
     TimerEnable(SYS_US_TIMER_BASE, TIMER_A);
 
-    // Configure and start the watchdog with Non-maskable interrupt,
+    // Configure (but don't start) the watchdog with Non-maskable interrupt,
     // and halt during debug events
     WatchdogIntTypeSet(SYS_WATCHDOG, WATCHDOG_INT_TYPE_NMI);
     WatchdogIntRegister(SYS_WATCHDOG, _ioctl_watchdog_expire);
     WatchdogStallEnable(SYS_WATCHDOG);
     WatchdogResetDisable(SYS_WATCHDOG);
     ioctl_loadWatchdog();
-    WatchdogEnable(SYS_WATCHDOG);
 }
 
 

@@ -152,7 +152,7 @@ void cvnp_procFrame(tCanFrame *frame);
  * Tick routine that should be called periodically by the HAL. Every
  * 10-50ms is a good time to use.
  */
-void cvnp_tick(uint32_t now);
+void cvnp_tick();
 
 
 /**

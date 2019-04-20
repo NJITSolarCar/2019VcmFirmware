@@ -35,6 +35,7 @@
 // General purpose files
 #include "src/fault.h"
 #include "src/interrupt.h"
+#include "src/util.h"
 
 // Specific modules / devices
 #include "src/device/bms.h"
@@ -43,6 +44,8 @@
 #include "src/device/ina225.h"
 #include "src/device/indicator.h"
 #include "src/device/vcm_io.h"
+#include "src/device/relay.h"
+#include "src/device/thermo.h"
 
 // Hardware access
 #include "src/hal/adc.h"
@@ -54,19 +57,70 @@
 #include "src/cvnp/cvnp.h"
 
 // Driverlib includes
-#include <driverlib/timer.h>
+#include <driverlib/systick.h>
+
+#define VCM_CVNP_MYCLASS			1
+#define VCM_CVNP_MYINST				1
+
+#define VCM_SYSTICK_LOAD			(UTIL_CYCLE_PER_MS * 10) // 10ms tick rate
+
+
+static void vcm_tick() {
+	bms_tick();
+	kbl_tick();
+	mppt_tick();
+	cvnp_tick();
+}
+
 
 /**
- * main.c
+ * Power on Self Test for the entire vehicle
  */
+static bool vcm_POST() {
+	tFaultData dat;
+	dat.ui64 = 0;
+	dat.pui32[0] = !bms_post();
+	dat.pui32[0] |= !kbl_post() << 1;
+	dat.pui32[0] |= !mppt_post() << 2;
+
+	if(dat.ui64 != 0) {
+		fault_assert(FAULT_VCM_POST_FAIL, dat);
+		return false;
+	}
+	return true;
+}
+
+
+
 int main(void)
 {
 	// Startup sequence
 	ioctl_reset();
-	// TODO: Add routine to initialize interrupt handlers
 	gpio_init();
 	adc_init();
 
+	cvnp_start(VCM_CVNP_MYCLASS, VCM_CVNP_MYINST);
+
+	// Module startup
+	fault_init();
+	bms_init();
+	ina_init();
+	indicator_init();
+	kbl_init();
+	mppt_init();
+	relay_init();
+	thermo_init();
+	vcmio_init();
+
+	// POST the vehicle. This will automatically set a fault,
+	// so no checking of the return is necessary
+	vcm_POST();
+
+	// Systick startup
+	SysTickPeriodSet(VCM_SYSTICK_LOAD);
+	SysTickIntRegister(vcm_tick);
+	SysTickIntEnable();
+	SysTickEnable();
 
 
 	return 0;

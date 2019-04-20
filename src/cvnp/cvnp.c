@@ -381,11 +381,13 @@ void cvnp_procFrame(tCanFrame *frame) {
  * this will run the onTimeout routine and kick it from the buffer if
  * necessary.
  */
-void cvnp_tick(uint32_t now) {
+void cvnp_tick() {
 	tBroadHandler *tmpBroad;
 	tQueryHandler *tmpQuery;
 	tNonCHandler *tmpNonC;
 	bool timeout;
+
+	uint32_t now = cvnpHal_now();
 
 	// Check for any valid handlers that are supposed to time
 	// out that have timed out. If found, reset the

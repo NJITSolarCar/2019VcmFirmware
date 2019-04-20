@@ -335,11 +335,12 @@ void bms_init() {
  *	At the moment, nothing in here needs to be ticked, but the function
  *	is kept here for compliance with other device classes.
  *
- * \param now the current millisecond timestamp
  */
-void bms_tick(uint32_t now) {
+void bms_tick() {
 
 }
+
+
 
 
 

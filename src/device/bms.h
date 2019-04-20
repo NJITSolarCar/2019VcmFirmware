@@ -110,23 +110,14 @@ void bms_init();
 /**
  * Tick routine to be run every ~10ms. This is where this api can
  * periodically query, check stuff, etc.
- *
- * \param now the current millisecond timestamp
  */
-void bms_tick(uint32_t now);
+void bms_tick();
 
 
 /**
  * Retrieves the instantaneous data for the BMS.
  */
 tBMSData *bms_data();
-
-
-/**
- * Establish communication with and verify correct operation of the
- * BMS. Returns true if POST was successful, false otherwise
- */
-bool bms_post();
 
 
 

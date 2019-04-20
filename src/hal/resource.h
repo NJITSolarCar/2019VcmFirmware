@@ -30,8 +30,8 @@
 #include <inc/hw_ints.h>
 
 // Internal
-#define SYS_US_TIMER_BASE					WTIMER0_BASE
-#define SYS_WATCHDOG						WATCHDOG0_BASE
+#define SYS_US_TIMER_BASE				WTIMER0_BASE
+#define SYS_WATCHDOG					WATCHDOG0_BASE
 
 /*
  * DASH / INDICATOR
