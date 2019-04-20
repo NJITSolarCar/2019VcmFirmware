@@ -88,9 +88,9 @@ void _bms_checkCurrentFaults() {
 		// If g_transientOCStart is 0, this is a newly occurring condition,
 		// so set the start timer
 		if (g_transientOCStart == 0)
-			g_transientOCStart = util_now();
+			g_transientOCStart = util_msTimestamp();
 
-		else if (util_now()-g_transientOCStart > BMS_TRANSIENT_OVERCURRENT_TIME) {
+		else if (util_msTimestamp()-g_transientOCStart > BMS_TRANSIENT_OVERCURRENT_TIME) {
 			dat.pfloat[0] = -g_bmsData.iBat;
 			fault_assert(FAULT_BMS_OVER_CURRENT_DISCHG, dat);
 		}
@@ -99,8 +99,8 @@ void _bms_checkCurrentFaults() {
 	// Same behavior for charge as for discharge
 	else if (g_bmsData.iBat <= BMS_CHG_OVERCURRENT_THRESH) {
 		if (g_transientOCStart == 0)
-			g_transientOCStart = util_now();
-		else if (util_now()-g_transientOCStart> BMS_TRANSIENT_OVERCURRENT_TIME) {
+			g_transientOCStart = util_msTimestamp();
+		else if (util_msTimestamp()-g_transientOCStart> BMS_TRANSIENT_OVERCURRENT_TIME) {
 			dat.pfloat[0] = g_bmsData.iBat;
 			fault_assert(FAULT_BMS_OVER_CURRENT_CHG, dat);
 		}

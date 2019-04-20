@@ -37,7 +37,14 @@
 /**
  * Returns the current millisecond timestamp of the system
  */
-uint32_t util_now();
+uint32_t util_msTimestamp();
+
+
+
+/**
+ * Returns the current microsecond timestamp of the system
+ */
+uint64_t util_usTimestamp();
 
 
 

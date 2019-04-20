@@ -156,7 +156,7 @@ void cvnpHal_sendFrame(tCanFrame frame) {
 
 
 uint32_t cvnpHal_now() {
-	return util_now();
+	return util_msTimestamp();
 }
 
 
