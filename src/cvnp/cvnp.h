@@ -178,6 +178,7 @@ tCompliantId cvnp_idToStruct(uint32_t id);
 uint32_t cvnp_structToId(tCompliantId id);
 
 
+bool cvnp_errorFrameHandler(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]);
 
 /**
  * Registers new handlers with the system. If another handler
