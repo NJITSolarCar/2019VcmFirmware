@@ -73,23 +73,6 @@ static void vcm_tick() {
 }
 
 
-/**
- * Power on Self Test for the entire vehicle
- */
-static bool vcm_POST() {
-	tFaultData dat;
-	dat.ui64 = 0;
-	dat.pui32[0] = !bms_post();
-	dat.pui32[0] |= !kbl_post() << 1;
-	dat.pui32[0] |= !mppt_post() << 2;
-
-	if(dat.ui64 != 0) {
-		fault_assert(FAULT_VCM_POST_FAIL, dat);
-		return false;
-	}
-	return true;
-}
-
 
 
 int main(void)
@@ -111,10 +94,6 @@ int main(void)
 	relay_init();
 	thermo_init();
 	vcmio_init();
-
-	// POST the vehicle. This will automatically set a fault,
-	// so no checking of the return is necessary
-	vcm_POST();
 
 	// Systick startup
 	SysTickPeriodSet(VCM_SYSTICK_LOAD);
