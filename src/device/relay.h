@@ -37,6 +37,15 @@ bool relay_getSolar();
 // Utility function to set all relays
 void relay_setAll(bool on);
 
+
+/**
+ * Master enable for relays. Acts as a mask with
+ * the values passed to relay_set*(). If enable is set
+ * to true, the relays will operate normally. If not, relays can still
+ * be set, but will not turn on until true is passed.
+ */
+void relay_enable(bool enable);
+
 /**
  * Sets all relays according to the faults set at the
  * time of calling
