@@ -14,6 +14,29 @@
 #include "../fault.h"
 #include "../hal/resource.h"
 
+// Relay master enable flag
+static bool g_relayEnable = false;
+
+// Individual relay state flags
+static bool g_battPlusState = false;
+static bool g_battMinusState = false;
+static bool g_dischargeState = false;
+static bool g_chargeState = false;
+static bool g_solarState = false;
+
+
+/**
+ * Updates all relay states based on the relay status flags
+ */
+void _relay_updateAll() {
+	relay_setBattPlus(g_battPlusState);
+	relay_setBattMinus(g_battMinusState);
+	relay_setDischarge(g_dischargeState);
+	relay_setCharge(g_chargeState);
+	relay_setSolar(g_solarState);
+}
+
+
 
 void relay_init() {
 	// Set up relays
@@ -29,32 +52,48 @@ void relay_init() {
  * Relay controls
  */
 void relay_setBattPlus(bool on) {
-	GPIOPinWrite(BATPOS_RLY_PORT, BATPOS_RLY_PIN, on ? 0xFF : 0);
+	g_battPlusState = on;
+	uint8_t outState = on && g_relayEnable ? 0xFF : 0;
+	GPIOPinWrite(BATPOS_RLY_PORT, BATPOS_RLY_PIN, outState);
 }
 
 
 void relay_setBattMinus(bool on) {
-	GPIOPinWrite(BATNEG_RLY_PORT, BATNEG_RLY_PIN, on ? 0xFF : 0);
+	g_battMinusState = on;
+	uint8_t outState = on && g_relayEnable ? 0xFF : 0;
+	GPIOPinWrite(BATNEG_RLY_PORT, BATNEG_RLY_PIN, outState);
 }
 
 
 void relay_setDischarge(bool on) {
-	GPIOPinWrite(DISCHG_RLY_PORT, DISCHG_RLY_PIN, on ? 0xFF : 0);
+	g_dischargeState = on;
+	uint8_t outState = on && g_relayEnable ? 0xFF : 0;
+	GPIOPinWrite(DISCHG_RLY_PORT, DISCHG_RLY_PIN, outState);
 }
 
 
 void relay_setCharge(bool on) {
-	GPIOPinWrite(CHG_RLY_PORT, CHG_RLY_PIN, on ? 0xFF : 0);
+	g_chargeState = on;
+	uint8_t outState = on && g_relayEnable ? 0xFF : 0;
+	GPIOPinWrite(CHG_RLY_PORT, CHG_RLY_PIN, outState);
 }
 
 
 void relay_setSolar(bool on) {
-	GPIOPinWrite(SOLAR_RLY_PORT, SOLAR_RLY_PIN, on ? 0xFF : 0);
+	g_solarState = on;
+	uint8_t outState = on && g_relayEnable ? 0xFF : 0;
+	GPIOPinWrite(SOLAR_RLY_PORT, SOLAR_RLY_PIN, outState);
 }
 
 
 void relay_setAll(bool on) {
-	uint8_t outState = on ? 0xFF : 0;
+	g_battMinusState = on;
+	g_battPlusState = on;
+	g_chargeState = on;
+	g_dischargeState = on;
+	g_solarState = on;
+
+	uint8_t outState = on && g_relayEnable ? 0xFF : 0;
 	GPIOPinWrite(BATPOS_RLY_PORT, BATPOS_RLY_PIN, outState);
 	GPIOPinWrite(BATNEG_RLY_PORT, BATNEG_RLY_PIN, outState);
 	GPIOPinWrite(DISCHG_RLY_PORT, DISCHG_RLY_PIN, outState);
@@ -62,6 +101,19 @@ void relay_setAll(bool on) {
 	GPIOPinWrite(SOLAR_RLY_PORT, SOLAR_RLY_PIN, outState);
 }
 
+
+
+
+/**
+ * Master enable for relays. Acts as a mask with
+ * the values passed to relay_set*(). If enable is set
+ * to true, the relays will operate normally. If not, relays can still
+ * be set, but will not turn on until true is passed.
+ */
+void relay_enable(bool enable) {
+	g_relayEnable = enable;
+	_relay_updateAll();
+}
 
 
 

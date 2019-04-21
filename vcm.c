@@ -34,7 +34,6 @@
 
 // General purpose files
 #include "src/fault.h"
-#include "src/interrupt.h"
 #include "src/util.h"
 
 // Specific modules / devices
