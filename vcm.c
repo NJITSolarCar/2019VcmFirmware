@@ -82,6 +82,7 @@ static void vcm_defaultFaultAssertAction(tFaultData dat) {
  */
 static void vcm_BmsPackShortHandler(tFaultData dat) {
 	relay_setAll(false);
+	indicator_setPattern(LED_STAT_PACK_SHORT);
 	vcm_defaultFaultAssertAction(dat);
 }
 

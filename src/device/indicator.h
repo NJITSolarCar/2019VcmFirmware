@@ -19,61 +19,7 @@
 #ifndef SRC_DEVICE_INDICATOR_H_
 #define SRC_DEVICE_INDICATOR_H_
 
-// Color definitions
-#define LED_COLOR_RED           {255, 0, 0}
-#define LED_COLOR_GREEN         {0, 255, 0}
-#define LED_COLOR_BLUE          {0, 0, 255}
-#define LED_COLOR_MAGENTA       {255, 0, 255}
-#define LED_COLOR_CYAN          {0, 255, 255}
-#define LED_COLOR_ORANGE        {255, 150, 0}
-#define LED_COLOR_MAGENTA       {255, 0, 255}
-#define LED_COLOR_LIGHTGREEN    {150, 255, 40}
-
-
-// Common blink patterns
-#define LED_BLINK_SOLID			{100, 0}
-
-#define LED_BLINK_SLOW_PULSEOFF	{90, 5}
-#define LED_BLINK_SLOW_PULSEON	{20, 5}
-#define LED_BLINK_SLOW_EVEN		{50, 5}
-
-#define LED_BLINK_MED_PULSEOFF	{90, 15}
-#define LED_BLINK_MED_PULSEON	{20, 15}
-#define LED_BLINK_MED_EVEN		{50, 15}
-
-#define LED_BLINK_FAST_PULSEOFF	{90, 40}
-#define LED_BLINK_FAST_PULSEON	{20, 40}
-#define LED_BLINK_FAST_EVEN		{50, 40}
-
-
-// Status to color / blink mappings
-#define LED_STAT_NOFLT_ENBL		{LED_BLINK_SLOW_PULSEOFF, LED_COLOR_GREEN}
-#define LED_STAT_NOFLT_DISBL	{LED_BLINK_SOLID, LED_COLOR_GREEN}
-
-#define LED_STAT_VCM_CRASH		{LED_BLINK_SOLID, LED_COLOR_RED}
-#define LED_STAT_PACK_SHORT		{LED_BLINK_FAST_EVEN, LED_COLOR_RED}
-#define LED_STAT_GEN_FAULT		{LED_BLINK_SLOW_EVEN, LED_COLOR_RED}
-
-#define LED_STAT_OVER_VOLT		{LED_BLINK_MED_PULSEOFF, LED_COLOR_BLUE}
-#define LED_STAT_VOLT_WARN		{LED_BLINK_SOLID, LED_COLOR_BLUE}
-#define LED_STAT_UNDER_VOLT		{LED_BLINK_MED_PULSEON, LED_COLOR_BLUE}
-
-#define LED_STAT_OVER_CHG_I		{LED_BLINK_MED_PULSEOFF, LED_COLOR_CYAN}
-#define LED_STAT_CURRENT_WARN	{LED_BLINK_SOLID, LED_COLOR_CYAN}
-#define LED_STAT_OVER_DISCHG_I	{LED_BLINK_MED_PULSEON, LED_COLOR_CYAN}
-
-#define LED_STAT_COMM			{LED_BLINK_SLOW_PULSEOFF, LED_COLOR_MAGENTA}
-
-#define LED_STAT_MPPT_TEMP_WARN	{LED_BLINK_SOLID, LED_COLOR_YELLOW}
-#define LED_STAT_MPPT_FAULT		{LED_BLINK_FAST_PULSEOFF, LED_COLOR_YELLOW}
-
-#define LED_STAT_KBL_FAULT		{LED_BLINK_MED_EVEN, LED_COLOR_ORANGE}
-
-
-
-
-#define INDICATOR_PWM_FULL_LOAD		255
-
+#include <stdint.h>
 
 /**
  * Represents an RGB color (as PWM duties from 0-255) for the LED. These
@@ -107,6 +53,63 @@ typedef struct {
     tBlinkPattern blinkPattern;
     tRGBColor color;
 } tLEDState;
+
+
+
+
+// Color definitions
+#define LED_COLOR_RED           {255, 0, 0}
+#define LED_COLOR_GREEN         {0, 255, 0}
+#define LED_COLOR_BLUE          {0, 0, 255}
+#define LED_COLOR_MAGENTA       {255, 0, 255}
+#define LED_COLOR_CYAN          {0, 255, 255}
+#define LED_COLOR_ORANGE        {255, 150, 0}
+#define LED_COLOR_MAGENTA       {255, 0, 255}
+#define LED_COLOR_YELLOW	    {255, 255, 0}
+
+
+// Common blink patterns
+#define LED_BLINK_SOLID			{100, 0}
+
+#define LED_BLINK_SLOW_PULSEOFF	{90, 5}
+#define LED_BLINK_SLOW_PULSEON	{20, 5}
+#define LED_BLINK_SLOW_EVEN		{50, 5}
+
+#define LED_BLINK_MED_PULSEOFF	{90, 15}
+#define LED_BLINK_MED_PULSEON	{20, 15}
+#define LED_BLINK_MED_EVEN		{50, 15}
+
+#define LED_BLINK_FAST_PULSEOFF	{90, 40}
+#define LED_BLINK_FAST_PULSEON	{20, 40}
+#define LED_BLINK_FAST_EVEN		{50, 40}
+
+
+#define INDICATOR_PWM_FULL_LOAD		255
+
+
+// Status to color / blink mappings
+extern const tLEDState LED_STAT_NOFLT_ENBL;
+extern const tLEDState LED_STAT_NOFLT_DISBL;
+
+extern const tLEDState LED_STAT_VCM_CRASH;
+extern const tLEDState LED_STAT_PACK_SHORT;
+extern const tLEDState LED_STAT_GEN_FAULT;
+
+extern const tLEDState LED_STAT_OVER_VOLT;
+extern const tLEDState LED_STAT_VOLT_WARN;
+extern const tLEDState LED_STAT_UNDER_VOLT;
+
+extern const tLEDState LED_STAT_OVER_CHG_I;
+extern const tLEDState LED_STAT_CURRENT_WARN;
+extern const tLEDState LED_STAT_OVER_DISCHG_I;
+
+extern const tLEDState LED_STAT_COMM;
+
+extern const tLEDState LED_STAT_MPPT_TEMP_WARN;
+extern const tLEDState LED_STAT_MPPT_FAULT;
+
+extern const tLEDState LED_STAT_KBL_FAULT;
+
 
 
 /**
