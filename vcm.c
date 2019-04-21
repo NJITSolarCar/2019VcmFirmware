@@ -75,12 +75,19 @@ static void vcm_defaultFaultAssertAction(tFaultData dat) {
 }
 
 
-/**
- * Handler called when FAULT_BMS_PACK_SHORT is asserted.
- * Disable all relays, set the indicator state, and do default
- * action
- */
-static void vcm_BmsPackShortHandler(tFaultData dat) {
+
+
+
+
+static void vcm_BmsVoltWarnHandler(tFaultData dat) {
+	indicator_setPattern(LED_STAT_VOLT_WARN);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+
+
+static void vcm_BmsPackShortFaultHandler(tFaultData dat) {
 	relay_setAll(false);
 	indicator_setPattern(LED_STAT_PACK_SHORT);
 	vcm_defaultFaultAssertAction(dat);
@@ -88,27 +95,142 @@ static void vcm_BmsPackShortHandler(tFaultData dat) {
 
 
 
-/**
- * Handler called when FAULT_BMS_COMM is asserted.
- * Disable all relays, set the indicator state, and do default
- * action
- */
-static void vcm_BmsCommHandler(tFaultData dat) {
+
+static void vcm_BmsCommFaultHandler(tFaultData dat) {
 	relay_setAll(false);
+	indicator_setPattern(LED_STAT_COMM);
 	vcm_defaultFaultAssertAction(dat);
 }
 
 
-/**
- * Handler called when FAULT_BMS_OVER_CURRENT_CHG is asserted.
- * Disable charge / solar relays, set the indicator state, and do default
- * action
- */
-static void vcm_BmsOverCurrentChg(tFaultData dat) {
+
+
+static void vcm_BmsOverCurrentChgFaultHandler(tFaultData dat) {
 	relay_setSolar(false);
 	relay_setCharge(false);
+	indicator_setPattern(LED_STAT_OVER_CHG_I);
 	vcm_defaultFaultAssertAction(dat);
 }
+
+
+
+
+static void vcm_BmsOverCurrentDischgFaultHandler(tFaultData dat) {
+	relay_setDischarge(false);
+	indicator_setPattern(LED_STAT_OVER_DISCHG_I);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+
+
+static void vcm_BmsOverVoltFaultHandler(tFaultData dat) {
+	relay_setSolar(false);
+	relay_setCharge(false);
+	indicator_setPattern(LED_STAT_OVER_VOLT);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+
+
+static void vcm_BmsUnderVoltFaultHandler(tFaultData dat) {
+	relay_setDischarge(false);
+	indicator_setPattern(LED_STAT_UNDER_VOLT);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+
+
+static void vcm_BmsGenFaultHandler(tFaultData dat) {
+	relay_setAll(false);
+	indicator_setPattern(LED_STAT_GEN_FAULT);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+
+
+static void vcm_TempFaultHandler(tFaultData dat) {
+	relay_setAll(false);
+	indicator_setPattern(LED_STAT_TEMP_FAULT);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+
+
+static void vcm_TempWarnHandler(tFaultData dat) {
+	indicator_setPattern(LED_STAT_TEMP_WARN);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+
+/**
+ * NOTE: For all MPPT faults except FAULT_MPPT_NO_BATT, which needs to
+ * be addressed separately, as it can be thrown during otherwise normal
+ * operation (charge relay opened)
+ */
+static void vcm_mpptGenFaultHandler(tFaultData dat) {
+	relay_setSolar(false);
+	indicator_setPattern(LED_STAT_MPPT_FAULT);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+
+static void vcm_mpptNoBattFaultHandler(tFaultData dat) {
+	indicator_setPattern(LED_STAT_MPPT_FAULT);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+
+static void vcm_mpptCommFaultHandler(tFaultData dat) {
+	relay_setSolar(false);
+	indicator_setPattern(LED_STAT_COMM);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+
+static void vcm_kblGenFaultHandler(tFaultData dat) {
+	relay_setDischarge(false);
+	indicator_setPattern(LED_STAT_KBL_FAULT);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+
+static void vcm_kblCommFaultHandler(tFaultData dat) {
+	relay_setDischarge(false);
+	indicator_setPattern(LED_STAT_COMM);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+
+/**
+ * For FAULT_CVNP_INTERNAL, FAULT_VCM_COMM, FAULT_GEN_AUX_OVER_DISCHARGE,
+ * and FAULT_GEN_ESTOP
+ */
+static void vcm_vcmGenFaultHandler(tFaultData dat) {
+	relay_setAll(false);
+	indicator_setPattern(LED_STAT_GEN_FAULT);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
+
+static void vcm_vcmCrashHandler(tFaultData dat) {
+	relay_setAll(false);
+	indicator_setPattern(LED_STAT_VCM_CRASH);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
 
 
 
