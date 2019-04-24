@@ -19,7 +19,7 @@ static tFaultHook g_faults[FAULT_NUM_FAULTS];
 static void _fault_defaultOnAsert(tFaultData data) {
 	// TODO: add a call to put the system into a safe state
 
-	for(;;); // Trap system
+//	for(;;); // Trap system
 }
 
 

@@ -21,7 +21,7 @@
 #include "../hal/resource.h"
 
 #define CAN_RX_BUF_SIZE			6
-#define CAN_MAX_BUF_SIZE		32
+#define CAN_MAX_BUF_SIZE		16
 
 // Message buffers
 static uint8_t g_rxBuf[8], g_txBuf[8];
@@ -99,8 +99,6 @@ bool cvnpHal_init() {
 	CANInit(CAN_RX_IFACE);
 	CANBitRateSet(CAN_RX_IFACE, UTIL_CLOCK_SPEED, CVNP_BITRATE);
 	CANIntRegister(CAN_RX_IFACE, _can_rxIntHandler);
-	CANInit(CAN_TX_IFACE);
-	CANBitRateSet(CAN_TX_IFACE, UTIL_CLOCK_SPEED, CVNP_BITRATE);
 
 	// Bind TX data buffer
 	g_txMsg.pui8MsgData = g_txBuf;
@@ -111,7 +109,8 @@ bool cvnpHal_init() {
 	g_rxMsg.ui32Flags = MSG_OBJ_RX_INT_ENABLE;
 
 
-	for(int i=0; i<CAN_MAX_BUF_SIZE; i++) {
+	// Prepare the RX buffer
+	for(int i=16; i<CAN_MAX_BUF_SIZE+16; i++) {
 		CANMessageSet(CAN_RX_IFACE,
 					  i+1,
 					  &g_rxMsg,
@@ -119,9 +118,17 @@ bool cvnpHal_init() {
 
 		// Make half of the messages take extended IDs, with the other half
 		// regular
-		if(i == 16)
+		if(i == 8)
 			g_rxMsg.ui32Flags |= MSG_OBJ_EXTENDED_ID;
 	}
+
+	// Prepare the TX buffer
+	for(int i=0; i<CAN_MAX_BUF_SIZE; i++) {
+			CANMessageSet(CAN_RX_IFACE,
+						  i+1,
+						  &g_txMsg,
+						  MSG_OBJ_TYPE_TX);
+		}
 
 	return true;
 }
@@ -134,13 +141,13 @@ void cvnpHal_sendFrame(tCanFrame frame) {
 	_can_cvnpFrameToTiva(&frame, &g_txMsg);
 
 	// Find highest clear message ID
-	uint32_t txStat = CANStatusGet(CAN_TX_IFACE, CAN_STS_TXREQUEST);
+	uint32_t txStat = CANStatusGet(CAN_RX_IFACE, CAN_STS_TXREQUEST);
 
 	int i=0;
-	while(i<32 && ((txStat >> i) & 1))
+	while(i<CAN_MAX_BUF_SIZE && ((txStat >> (i+16)) & 1))
 		i++;
 
-	if(i>= 32) {
+	if(i>= CAN_MAX_BUF_SIZE) {
 		tFaultData dat;
 		// TODO: Add proper data for this fault
 		dat.ui64 = 0;
@@ -148,7 +155,7 @@ void cvnpHal_sendFrame(tCanFrame frame) {
 	}
 
 	// CAN Message objects are 1 indexed, not 0 indexed
-	CANMessageSet(CAN_TX_IFACE, i+1, &g_txMsg, MSG_OBJ_TYPE_TX);
+	CANMessageSet(CAN_RX_IFACE, i+1, &g_txMsg, MSG_OBJ_TYPE_TX);
 }
 
 

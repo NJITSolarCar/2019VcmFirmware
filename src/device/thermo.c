@@ -29,6 +29,7 @@ static bool g_adcValid = false;
 
 void _thermo_onSampleDone() {
 	// Save the data and set the valid flag
+	ADCIntClear(THERM_ADC_MODULE, THERM_ADC_SEQUENCE);
 	ADCSequenceDataGet(THERM_ADC_MODULE, THERM_ADC_SEQUENCE, g_adcResults);
 	g_adcValid = true;
 }
@@ -36,6 +37,11 @@ void _thermo_onSampleDone() {
 
 
 void thermo_init() {
+	GPIOPinTypeADC(THERM1_PORT, THERM1_PIN);
+	GPIOPinTypeADC(THERM2_PORT, THERM2_PIN);
+	GPIOPinTypeADC(THERM3_PORT, THERM3_PIN);
+
+
 	// Initialize the ADC sequence to run off a processor trigger
 	ADCSequenceConfigure(THERM_ADC_MODULE,
 						 THERM_ADC_SEQUENCE,
@@ -58,6 +64,8 @@ void thermo_init() {
 							 2,
 							 THERM3_ADC_CHANNEL | ADC_CTL_IE | ADC_CTL_END);
 
+	ADCSequenceEnable(THERM_ADC_MODULE, THERM_ADC_SEQUENCE);
+	ADCIntClear(THERM_ADC_MODULE, THERM_ADC_SEQUENCE);
 	ADCIntRegister(THERM_ADC_MODULE, THERM_ADC_SEQUENCE, _thermo_onSampleDone);
 	ADCIntEnable(THERM_ADC_MODULE, THERM_ADC_SEQUENCE);
 }
@@ -100,6 +108,8 @@ bool thermo_getTemp(float temp[THERM_NUM_THERM]) {
 		temp[i] = lnR * (temp[i] + THERM_PARAM_C);
 		temp[i] = lnR * (temp[i] + THERM_PARAM_B);
 		temp[i] += THERM_PARAM_A;
+
+		temp[i] = (1.0f / temp[i]) - 273.15;
 
 		// Check for high / low temp
 		if(temp[i] > temp[idxHi])

@@ -47,7 +47,6 @@
 #include "src/device/thermo.h"
 
 // Hardware access
-#include "src/hal/adc.h"
 #include "src/hal/gpio.h"
 #include "src/hal/ioctl.h"
 #include "src/hal/resource.h"
@@ -212,6 +211,13 @@ static void vcm_kblCommFaultHandler(tFaultData dat) {
 
 
 
+static void vcm_mpptUserLockoutFaultHandler(tFaultData dat) {
+	relay_setSolar(false);
+	indicator_setPattern(LED_STAT_MPPT_LOCK);
+}
+
+
+
 /**
  * For FAULT_CVNP_INTERNAL, FAULT_VCM_COMM, FAULT_GEN_AUX_OVER_DISCHARGE,
  * and FAULT_GEN_ESTOP
@@ -231,13 +237,52 @@ static void vcm_vcmCrashHandler(tFaultData dat) {
 }
 
 
-
+static void vcm_defaultDeassert() {
+	// Do nothing for now
+}
 
 
 /**
  * Bind all of the fault handlers for the VCM
  */
 static void vcm_bindFaultHandlers() {
+	fault_regHook(FAULT_BMS_CELL_OVER_VOLT_WARN, vcm_BmsVoltWarnHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_CELL_UNDER_VOLT_WARN, vcm_BmsVoltWarnHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_PACK_OVER_VOLT_WARN, vcm_BmsVoltWarnHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_PACK_UNDER_VOLT_WARN, vcm_BmsVoltWarnHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_PACK_SHORT, vcm_BmsPackShortFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_COMM, vcm_BmsCommFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_OVER_CURRENT_CHG, vcm_BmsOverCurrentChgFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_OVER_CURRENT_DISCHG, vcm_BmsOverCurrentDischgFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_CELL_OVER_VOLT, vcm_BmsOverVoltFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_CELL_UNDER_VOLT, vcm_BmsUnderVoltFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_PACK_OVER_VOLT, vcm_BmsOverVoltFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_PACK_UNDER_VOLT, vcm_BmsUnderVoltFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_LOW_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_HIGH_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_IMBALANCE, vcm_BmsGenFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_GENERAL, vcm_BmsGenFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_MPPT_TEMP_WARN, vcm_TempWarnHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_MPPT_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_MPPT_BATT_CHARGED, vcm_mpptGenFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_MPPT_NO_BATT, vcm_mpptNoBattFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_MPPT_LOW_SOLAR_VOLTS, vcm_mpptGenFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_MPPT_COMM, vcm_mpptCommFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_TELE_LORA, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_TELE_PI, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_TELE_COMM, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_MOTOR_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_MOTOR_GEN, vcm_kblGenFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_MOTOR_COMM, vcm_kblCommFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_GEN_ESTOP, vcm_vcmCrashHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_GEN_AUX_OVER_DISCHARGE, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_CVNP_INTERNAL, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_VCM_COMM, vcm_vcmGenFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_VCM_WDT_FAIL, vcm_vcmCrashHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_VCM_THERMISTOR, vcm_vcmGenFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_VCM_HIGH_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_VCM_LOW_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_MPPT_USER_LOCKOUT, vcm_mpptUserLockoutFaultHandler, vcm_defaultDeassert);
 
 }
 
@@ -245,10 +290,21 @@ static void vcm_bindFaultHandlers() {
 
 /////////////////////////////// MAIN ALGORITHM ////////////////////////////////
 static void vcm_tick() {
+	float g_thermoTemp[3]; // Thermistor temperature readings
+//	uint32_t foo[3];
+//
+//	ADCSequenceDataGet(THERM_ADC_MODULE, THERM_ADC_SEQUENCE, foo);
+
+	// calc results
+	thermo_getTemp(g_thermoTemp);
+
 	bms_tick();
 	kbl_tick();
 	mppt_tick();
 	cvnp_tick();
+
+	// Always sample the thermistor and report
+	thermo_doSample();
 }
 
 
@@ -256,10 +312,10 @@ static void vcm_tick() {
 
 int main(void)
 {
+	vcm_bindFaultHandlers();
 	// Startup sequence
 	ioctl_reset();
 	gpio_init();
-	adc_init();
 
 	cvnp_start(VCM_CVNP_MYCLASS, VCM_CVNP_MYINST);
 
@@ -280,6 +336,7 @@ int main(void)
 	SysTickIntEnable();
 	SysTickEnable();
 
-
-	return 0;
+	// Loop forever. Everything will be done via external event triggers
+	// or the systick interrupt
+	for(;;);
 }

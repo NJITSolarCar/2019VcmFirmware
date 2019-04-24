@@ -44,9 +44,11 @@ void ioctl_reset() {
     SysCtlClockSet(
             SYSCTL_OSC_MAIN |
 			IOCTL_MCU_XTAL |
-			IOCTL_MCU_VCO |
+			SYSCTL_USE_PLL |
 			IOCTL_MCU_PLL_DIV
     );
+
+    uint32_t clk = SysCtlClockGet();
 
     // Enable peripherals
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
@@ -67,6 +69,7 @@ void ioctl_reset() {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_WTIMER0);
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_CAN0);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_CAN1);
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_WDOG0);
 

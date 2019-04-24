@@ -53,7 +53,8 @@ typedef enum {
 	FAULT_VCM_THERMISTOR, // data: ui32[0]: bits 0-2: fault state of each thermistor
 	FAULT_VCM_HIGH_TEMP, // data: ui32[0]: thermistor ID; float[1]: thermistor temperature
 	FAULT_VCM_LOW_TEMP, // data: ui32[0]: thermistor ID; float[1]: thermistor temperature
-    FAULT_NUM_FAULTS
+    FAULT_MPPT_USER_LOCKOUT, // No data used
+	FAULT_NUM_FAULTS
 } tFaultCode;
 
 /**
