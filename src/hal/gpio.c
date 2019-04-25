@@ -29,6 +29,8 @@ void _gpio_intPortF() {
 	uint32_t intStat = GPIOIntStatus(GPIO_PORTF_BASE, true);
 	uint8_t pinState = GPIOPinRead(GPIO_PORTF_BASE, 0xFF);
 
+	GPIOIntClear(GPIO_PORTF_BASE, 0xFF);
+
 	if(intStat & BMS_DCL_PIN) {
 		bool isSet = !!(pinState & BMS_DCL_PIN);
 		bms_onDCLGpioChange(isSet);
@@ -39,6 +41,8 @@ void _gpio_intPortF() {
 void _gpio_intPortB() {
 	uint32_t intStat = GPIOIntStatus(GPIO_PORTB_BASE, true);
 	uint8_t pinState = GPIOPinRead(GPIO_PORTB_BASE, 0xFF);
+
+	GPIOIntClear(GPIO_PORTB_BASE, 0xFF);
 
 	if(intStat & DASH_MPPT_PIN) {
 		if(pinState & DASH_MPPT_PIN) {
@@ -70,6 +74,12 @@ void gpio_init() {
 	GPIOIntEnable(GPIO_PORTF_BASE, BMS_DCL_PIN);
 	GPIOIntTypeSet(GPIO_PORTF_BASE, BMS_DCL_PIN, GPIO_BOTH_EDGES);
 	GPIOIntRegister(GPIO_PORTF_BASE, _gpio_intPortF);
+
+	// Set up port B ISRs
+	GPIOPinTypeGPIOInput(GPIO_PORTB_BASE, DASH_MPPT_PIN | DASH_IGNITION_PIN);
+	GPIOIntEnable(GPIO_PORTB_BASE, DASH_MPPT_PIN | DASH_IGNITION_PIN);
+	GPIOIntTypeSet(GPIO_PORTB_BASE, DASH_MPPT_PIN | DASH_IGNITION_PIN, GPIO_BOTH_EDGES);
+	GPIOIntRegister(GPIO_PORTB_BASE, _gpio_intPortB);
 }
 
 

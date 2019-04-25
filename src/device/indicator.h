@@ -76,7 +76,7 @@ typedef struct {
 #define LED_BLINK_SLOW_EVEN		{50, 5}
 
 #define LED_BLINK_MED_PULSEOFF	{90, 15}
-#define LED_BLINK_MED_PULSEON	{20, 15}
+#define LED_BLINK_MED_PULSEON	{10, 15}
 #define LED_BLINK_MED_EVEN		{50, 15}
 
 #define LED_BLINK_FAST_PULSEOFF	{90, 40}

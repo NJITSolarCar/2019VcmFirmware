@@ -64,6 +64,7 @@ void ioctl_reset() {
 
     SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER2);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER4);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER5);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_WTIMER0);

@@ -123,10 +123,11 @@ bool thermo_getTemp(float temp[THERM_NUM_THERM]) {
 		fault_assert(FAULT_VCM_THERMISTOR, dat);
 
 	// Check temperature limits
-	if(temp[idxHi] >= THERM_MAX_TEMP) {
+	if(temp[idxHi] >= THERM_MAX_TEMP_WARN) {
 		dat.pui32[0] = idxHi;
 		dat.pfloat[1] = temp[idxHi];
-		fault_assert(FAULT_VCM_HIGH_TEMP, dat);
+		uint32_t fault = temp[idxHi] > THERM_MAX_TEMP ? FAULT_VCM_HIGH_TEMP : FAULT_VCM_TEMP_WARN;
+		fault_assert(fault, dat);
 	}
 
 	if(temp[idxLo] <= THERM_MIN_TEMP) {

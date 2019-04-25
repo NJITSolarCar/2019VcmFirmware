@@ -61,7 +61,7 @@ void fault_init() {
 uint64_t fault_getFaultSummary() {
 	uint64_t sum = 0;
 	for(int i=0; i<FAULT_NUM_FAULTS; i++) {
-		sum |= g_faults[i].bSet << i;
+		sum |= ((uint64_t)g_faults[i].bSet) << i;
 	}
 
 	return sum;
@@ -77,9 +77,11 @@ uint64_t fault_getFaultSummary() {
  */
 void fault_assert(uint32_t ui32FaultNum, tFaultData uData) {
 	tFaultHook *fh = &g_faults[ui32FaultNum]; // utility copy
-	fh->bSet = true;
-	fh->pfnOnAssert(uData);
-	fh->uData = uData;
+	if(!fh->bSet) {
+		fh->bSet = true;
+		fh->pfnOnAssert(uData);
+		fh->uData = uData;
+	}
 }
 
 

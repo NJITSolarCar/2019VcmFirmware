@@ -28,7 +28,8 @@
 #define THERM_ADC_FAULT_LEVEL	5
 
 // Temperature limits
-#define THERM_MAX_TEMP			75.0f
+#define THERM_MAX_TEMP			85.0f
+#define THERM_MAX_TEMP_WARN		50.0f
 #define THERM_MIN_TEMP			1.0f
 
 

@@ -45,6 +45,7 @@
 #include "src/device/vcm_io.h"
 #include "src/device/relay.h"
 #include "src/device/thermo.h"
+#include "src/device/debug_led.h"
 
 // Hardware access
 #include "src/hal/gpio.h"
@@ -281,6 +282,7 @@ static void vcm_bindFaultHandlers() {
 	fault_regHook(FAULT_VCM_WDT_FAIL, vcm_vcmCrashHandler, vcm_defaultDeassert);
 	fault_regHook(FAULT_VCM_THERMISTOR, vcm_vcmGenFaultHandler, vcm_defaultDeassert);
 	fault_regHook(FAULT_VCM_HIGH_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_VCM_TEMP_WARN, vcm_TempWarnHandler, vcm_defaultDeassert);
 	fault_regHook(FAULT_VCM_LOW_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
 	fault_regHook(FAULT_MPPT_USER_LOCKOUT, vcm_mpptUserLockoutFaultHandler, vcm_defaultDeassert);
 
@@ -312,29 +314,46 @@ static void vcm_tick() {
 
 int main(void)
 {
+	// Fault handler startup
+	fault_init();
 	vcm_bindFaultHandlers();
+
 	// Startup sequence
 	ioctl_reset();
+
+	// Start this first for debugging purposes
+	debugLed_init();
+	debugLed_setSolid(true);
+
 	gpio_init();
 
 	cvnp_start(VCM_CVNP_MYCLASS, VCM_CVNP_MYINST);
 
 	// Module startup
-	fault_init();
+	indicator_init();
 	bms_init();
 	ina_init();
-	indicator_init();
 	kbl_init();
 	mppt_init();
 	relay_init();
 	thermo_init();
 	vcmio_init();
 
+	// relay_enable(true);
+	relay_setAll(true);
+	relay_enable(false);
+	indicator_setPattern(LED_STAT_NOFLT_DISBL);
+
+
+
 	// Systick startup
 	SysTickPeriodSet(VCM_SYSTICK_LOAD);
 	SysTickIntRegister(vcm_tick);
 	SysTickIntEnable();
 	SysTickEnable();
+
+	// Start blinking
+	debugLed_setBlink();
 
 	// Loop forever. Everything will be done via external event triggers
 	// or the systick interrupt

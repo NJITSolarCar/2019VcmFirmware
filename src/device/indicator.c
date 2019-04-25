@@ -33,8 +33,8 @@ const tLEDState LED_STAT_OVER_DISCHG_I = {LED_BLINK_MED_PULSEON, LED_COLOR_CYAN}
 
 const tLEDState LED_STAT_COMM = {LED_BLINK_SLOW_PULSEOFF, LED_COLOR_MAGENTA};
 
-const tLEDState LED_STAT_TEMP_WARN = {LED_BLINK_SLOW_PULSEOFF, LED_COLOR_YELLOW};
-const tLEDState LED_STAT_TEMP_FAULT = {LED_BLINK_MED_PULSEON, LED_COLOR_ORANGE};
+const tLEDState LED_STAT_TEMP_WARN = {LED_BLINK_SOLID, LED_COLOR_YELLOW};
+const tLEDState LED_STAT_TEMP_FAULT = {LED_BLINK_FAST_PULSEON, LED_COLOR_ORANGE};
 const tLEDState LED_STAT_MPPT_FAULT = {LED_BLINK_FAST_PULSEOFF, LED_COLOR_YELLOW};
 const tLEDState LED_STAT_MPPT_LOCK = {LED_BLINK_SOLID, LED_COLOR_YELLOW};
 
@@ -60,6 +60,10 @@ uint32_t _indicator_calcBlinkTimerLoad(tBlinkPattern pattern, bool invert) {
  * Sets a color to the LEDs
  */
 void _indicator_setColor(tRGBColor color) {
+	if(color.red < 1) { color.red = 1; }
+	if(color.green < 1) { color.green = 1; }
+	if(color.blue < 1) { color.blue = 1; }
+
 	TimerMatchSet(TIMER5_BASE, TIMER_A, 255 - color.red); // Red
 	TimerMatchSet(TIMER4_BASE, TIMER_B, 255 - color.green); // Green
 	TimerMatchSet(TIMER4_BASE, TIMER_A, 255 - color.blue); // Blue
@@ -73,20 +77,25 @@ void _indicator_setColor(tRGBColor color) {
  */
 void _indicator_setLEDMode(bool isPWM) {
 	if(isPWM) { // Set as PWM
-		GPIOPinTypeTimer(DASH_LED_PORT, DASH_LED_RED_PIN |
-						 DASH_LED_GREEN_PIN |
-						 DASH_LED_BLUE_PIN);
-
 		GPIOPinConfigure(DASH_LED_RED_PINMAP);
 		GPIOPinConfigure(DASH_LED_GREEN_PINMAP);
 		GPIOPinConfigure(DASH_LED_BLUE_PINMAP);
 
+		GPIOPinTypeTimer(DASH_LED_PORT, DASH_LED_RED_PIN |
+						 DASH_LED_GREEN_PIN |
+						 DASH_LED_BLUE_PIN);
+
 		// Configure the PWM timers
-		TimerConfigure(TIMER4_BASE, TIMER_CFG_A_PERIODIC | TIMER_CFG_A_PWM);
-		TimerConfigure(TIMER4_BASE, TIMER_CFG_A_PERIODIC | TIMER_CFG_B_PWM);
-		TimerConfigure(TIMER5_BASE, TIMER_CFG_A_PERIODIC | TIMER_CFG_A_PWM);
-		TimerLoadSet(TIMER4_BASE, TIMER_BOTH, INDICATOR_PWM_FULL_LOAD);
+		TimerConfigure(TIMER4_BASE, TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PWM | TIMER_CFG_B_PWM);
+		TimerConfigure(TIMER5_BASE, TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PWM);
+
+		TimerLoadSet(TIMER4_BASE, TIMER_A, INDICATOR_PWM_FULL_LOAD);
+		TimerLoadSet(TIMER4_BASE, TIMER_B, INDICATOR_PWM_FULL_LOAD);
 		TimerLoadSet(TIMER5_BASE, TIMER_A, INDICATOR_PWM_FULL_LOAD);
+
+		TimerEnable(TIMER4_BASE, TIMER_A);
+		TimerEnable(TIMER4_BASE, TIMER_B);
+		TimerEnable(TIMER5_BASE, TIMER_A);
 	}
 	else { // Set to GPIO and turn off
 		GPIOPinTypeGPIOOutput(DASH_LED_PORT, DASH_LED_RED_PIN |
@@ -109,6 +118,7 @@ void _indicator_blinkISR() {
 	uint32_t load;
 
 	TimerIntClear(DASH_LED_BLINK_TIMER_BASE, TIMER_TIMA_TIMEOUT);
+	g_wasOn ^= 1;
 
 	// Turn off
 	if(g_wasOn) {
@@ -140,8 +150,9 @@ void indicator_init()
 
 	// Configure the blink timer. Don't load yet, that can be done when
 	// the blink pattern is set
-	TimerConfigure(DASH_LED_BLINK_TIMER_BASE, TIMER_CFG_A_PERIODIC);
-	TimerIntRegister(DASH_LED_BLINK_TIMER_BASE, TIMER_TIMA_TIMEOUT, _indicator_blinkISR);
+	TimerConfigure(DASH_LED_BLINK_TIMER_BASE, TIMER_CFG_PERIODIC);
+	TimerIntRegister(DASH_LED_BLINK_TIMER_BASE, TIMER_A, _indicator_blinkISR);
+	TimerIntEnable(DASH_LED_BLINK_TIMER_BASE, TIMER_TIMA_TIMEOUT);
 }
 
 
@@ -156,13 +167,13 @@ void indicator_setPattern(tLEDState state) {
 
 
 	if(state.blinkPattern.freq == 0) {
+		TimerIntDisable(DASH_LED_BLINK_TIMER_BASE, TIMER_A);
 		TimerDisable(DASH_LED_BLINK_TIMER_BASE, DASH_LED_BLINK_TIMER_BASE);
 	} else {
-		TimerLoadSet(DASH_LED_BLINK_TIMER_BASE,
-					 DASH_LED_BLINK_TIMER_BASE,
-					 _indicator_calcBlinkTimerLoad(state.blinkPattern, !g_wasOn));
-
-		TimerEnable(DASH_LED_BLINK_TIMER_BASE, DASH_LED_BLINK_TIMER_BASE);
+		uint32_t load = _indicator_calcBlinkTimerLoad(state.blinkPattern, !g_wasOn);
+		TimerLoadSet(DASH_LED_BLINK_TIMER_BASE, TIMER_A, load);
+		TimerIntEnable(DASH_LED_BLINK_TIMER_BASE, TIMER_TIMA_TIMEOUT);
+		TimerEnable(DASH_LED_BLINK_TIMER_BASE, TIMER_A);
 	}
 
 	// Don't set this until after turning off the blink timer, as a zero
