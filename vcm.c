@@ -218,6 +218,13 @@ static void vcm_mpptUserLockoutFaultHandler(tFaultData dat) {
 }
 
 
+static void vcm_vcmThermFaultHandler(tFaultData dat) {
+	relay_setAll(false);
+	indicator_setPattern(LED_STAT_THERM_WIRING);
+	vcm_defaultFaultAssertAction(dat);
+}
+
+
 
 /**
  * For FAULT_CVNP_INTERNAL, FAULT_VCM_COMM, FAULT_GEN_AUX_OVER_DISCHARGE,
@@ -280,7 +287,7 @@ static void vcm_bindFaultHandlers() {
 	fault_regHook(FAULT_CVNP_INTERNAL, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
 	fault_regHook(FAULT_VCM_COMM, vcm_vcmGenFaultHandler, vcm_defaultDeassert);
 	fault_regHook(FAULT_VCM_WDT_FAIL, vcm_vcmCrashHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_VCM_THERMISTOR, vcm_vcmGenFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_VCM_THERMISTOR, vcm_vcmThermFaultHandler, vcm_defaultDeassert);
 	fault_regHook(FAULT_VCM_HIGH_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
 	fault_regHook(FAULT_VCM_TEMP_WARN, vcm_TempWarnHandler, vcm_defaultDeassert);
 	fault_regHook(FAULT_VCM_LOW_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
@@ -293,9 +300,6 @@ static void vcm_bindFaultHandlers() {
 /////////////////////////////// MAIN ALGORITHM ////////////////////////////////
 static void vcm_tick() {
 	float g_thermoTemp[3]; // Thermistor temperature readings
-//	uint32_t foo[3];
-//
-//	ADCSequenceDataGet(THERM_ADC_MODULE, THERM_ADC_SEQUENCE, foo);
 
 	// calc results
 	thermo_getTemp(g_thermoTemp);
@@ -329,6 +333,9 @@ int main(void)
 
 	cvnp_start(VCM_CVNP_MYCLASS, VCM_CVNP_MYINST);
 
+//	GPIOPinTypeGPIOInput(CAN_RX_PORT, CAN_RX_PIN);
+//	GPIOPinTypeGPIOInput(CAN_TX_PORT, CAN_TX_PIN);
+
 	// Module startup
 	indicator_init();
 	bms_init();
@@ -340,8 +347,8 @@ int main(void)
 	vcmio_init();
 
 	// relay_enable(true);
-	relay_setAll(true);
 	relay_enable(false);
+	relay_setAll(true);
 	indicator_setPattern(LED_STAT_NOFLT_DISBL);
 
 

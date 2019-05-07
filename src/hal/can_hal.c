@@ -12,6 +12,9 @@
 
 #include <driverlib/can.h>
 #include <driverlib/gpio.h>
+#include <driverlib/interrupt.h>
+
+#include <inc/hw_ints.h>
 
 #include "../util.h"
 #include "../fault.h"
@@ -21,7 +24,7 @@
 #include "../hal/resource.h"
 
 #define CAN_RX_BUF_SIZE			6
-#define CAN_MAX_BUF_SIZE		16
+#define CAN_MAX_BUF_SIZE		8
 
 // Message buffers
 static uint8_t g_rxBuf[8], g_txBuf[8];
@@ -55,16 +58,43 @@ void _can_cvnpFrameToTiva(tCanFrame *cvnp, tCANMsgObject *tiva) {
 
 
 
+/**
+ * Returns a singular interrupt bit, or 0 if none
+ * are set. Will select the lowest bit set
+ */
+uint32_t _can_getLowestInt(uint32_t intStat) {
+	for(int i=0; i<32; i++) {
+		if(intStat & 0x1)
+			return 1 << i;
+		intStat >>= 1;
+	}
+	return 0;
+}
+
+
+
 void _can_rxIntHandler() {
 	// Get the cause
 	uint32_t intStat = CANIntStatus(CAN_RX_IFACE, CAN_INT_STS_CAUSE);
 
-	if(intStat > 32) { // For status / error interrupt
-		// TODO: assert CAN fault
+	if(intStat > 32) { // For status / error / tx done interrupts
+		// Clear the error interrupts
+		intStat = CANStatusGet(CAN_RX_IFACE, CAN_STS_CONTROL);
+		if(intStat == CAN_STATUS_TXOK) {
+			// Do nothing, we don't care about TX interrupts
+		} else {
+			// TODO: handle a CAN bus error
+		}
 	} else {
 		// Process the frame
 		tCanFrame frame;
+
+		// Select a single frame interrupt to handle
+		intStat = _can_getLowestInt(intStat);
 		CANMessageGet(CAN_RX_IFACE, intStat, &g_rxMsg, true);
+		CANIntClear(CAN_RX_IFACE, intStat);
+
+		// Process the frame
 		_can_tivaFrameToCVNP(&frame, &g_rxMsg);
 		cvnp_procFrame(&frame);
 	}
@@ -87,8 +117,9 @@ void _can_txIntHandler() {
  * Initializes the CAN hardware
  */
 bool cvnpHal_init() {
-	// Setup the GPIO as CAN
+	// Setup the GPIO as CAN, and turn off standby
 	GPIOPinTypeGPIOOutput(CAN_STB_PORT, CAN_STB_PIN);
+	GPIOPinWrite(CAN_STB_PORT, CAN_STB_PIN, 0x0);
 
 	GPIOPinConfigure(CAN_TX_PINCONFIG);
 	GPIOPinConfigure(CAN_RX_PINCONFIG);
@@ -100,17 +131,26 @@ bool cvnpHal_init() {
 	CANBitRateSet(CAN_RX_IFACE, UTIL_CLOCK_SPEED, CVNP_BITRATE);
 	CANIntRegister(CAN_RX_IFACE, _can_rxIntHandler);
 
-	// Bind TX data buffer
+	// Bind RX data buffer
 	g_txMsg.pui8MsgData = g_txBuf;
+	g_txMsg.ui32Flags = MSG_OBJ_NO_FLAGS;
+	g_txMsg.ui32MsgID = 0;
+	g_txMsg.ui32MsgIDMask = 0;
 
 	g_rxMsg.pui8MsgData = g_rxBuf;
 	g_rxMsg.ui32MsgIDMask = 0x0;
 	g_rxMsg.ui32MsgLen = 8;
-	g_rxMsg.ui32Flags = MSG_OBJ_RX_INT_ENABLE;
+	g_rxMsg.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
+
+	// Use a singular mailbox for RX for each standard and extended ID for now
+	CANMessageSet(CAN_RX_IFACE, 1, &g_rxMsg, MSG_OBJ_TYPE_RX);
+
+	g_rxMsg.ui32Flags |= MSG_OBJ_EXTENDED_ID;
+	CANMessageSet(CAN_RX_IFACE, 2, &g_rxMsg, MSG_OBJ_TYPE_RX);
 
 
 	// Prepare the RX buffer
-	for(int i=16; i<CAN_MAX_BUF_SIZE+16; i++) {
+	/*for(int i=0; i<CAN_MAX_BUF_SIZE; i++) {
 		CANMessageSet(CAN_RX_IFACE,
 					  i+1,
 					  &g_rxMsg,
@@ -120,15 +160,20 @@ bool cvnpHal_init() {
 		// regular
 		if(i == 8)
 			g_rxMsg.ui32Flags |= MSG_OBJ_EXTENDED_ID;
-	}
+	}*/
 
-	// Prepare the TX buffer
-	for(int i=0; i<CAN_MAX_BUF_SIZE; i++) {
+	// Prepare the TX buffer. Sits in the second half of the mailbox
+	for(int i=CAN_MAX_BUF_SIZE; i<2*CAN_MAX_BUF_SIZE; i++) {
 			CANMessageSet(CAN_RX_IFACE,
 						  i+1,
 						  &g_txMsg,
 						  MSG_OBJ_TYPE_TX);
 		}
+
+	// Enable the CAN bus
+	CANIntEnable(CAN_RX_IFACE, CAN_INT_ERROR | CAN_INT_MASTER | CAN_INT_STATUS);
+	IntEnable(INT_CAN0);
+	CANEnable(CAN_RX_IFACE);
 
 	return true;
 }
@@ -143,8 +188,8 @@ void cvnpHal_sendFrame(tCanFrame frame) {
 	// Find highest clear message ID
 	uint32_t txStat = CANStatusGet(CAN_RX_IFACE, CAN_STS_TXREQUEST);
 
-	int i=0;
-	while(i<CAN_MAX_BUF_SIZE && ((txStat >> (i+16)) & 1))
+	int i=CAN_MAX_BUF_SIZE+1;
+	while(i<=2*CAN_MAX_BUF_SIZE && ((txStat >> i) & 1))
 		i++;
 
 	if(i>= CAN_MAX_BUF_SIZE) {
@@ -155,7 +200,7 @@ void cvnpHal_sendFrame(tCanFrame frame) {
 	}
 
 	// CAN Message objects are 1 indexed, not 0 indexed
-	CANMessageSet(CAN_RX_IFACE, i+1, &g_txMsg, MSG_OBJ_TYPE_TX);
+	CANMessageSet(CAN_RX_IFACE, i, &g_txMsg, MSG_OBJ_TYPE_TX);
 }
 
 

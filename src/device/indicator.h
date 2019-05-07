@@ -105,6 +105,7 @@ extern const tLEDState LED_STAT_OVER_DISCHG_I;
 
 extern const tLEDState LED_STAT_COMM;
 
+extern const tLEDState LED_STAT_THERM_WIRING;
 extern const tLEDState LED_STAT_TEMP_WARN;
 extern const tLEDState LED_STAT_TEMP_FAULT;
 extern const tLEDState LED_STAT_MPPT_FAULT;
