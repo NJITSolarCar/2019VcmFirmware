@@ -187,7 +187,7 @@ static void _bms_parseFrame0(tCanFrame *frame) {
 	// Get Avg. cell voltage
 	tmp = ((uint16_t)frame->data[6]) << 8;
 	tmp |= frame->data[7];
-	g_bmsData.iBat = ((float) tmp) * 1E-4f;
+	g_bmsData.vCellAvg = ((float) tmp) * 1E-4f;
 
 	// Check for faults
 	_bms_checkFrame0Faults();
@@ -273,7 +273,7 @@ static void _bms_parseCellBroadcast(tCanFrame *frame) {
 	// Resistance
 	tmp = ((uint16_t)frame->data[3] & 0x7F) << 8; // Mask the MSB, used to indicate a different condition
 	tmp |= frame->data[4];
-	dat->voltage = ((float)tmp) * 1E-5f;
+	dat->resistance = ((float)tmp) * 1E-5f;
 
 	// Check voltage limits. Only check if this is the lowest /
 	// highest cell

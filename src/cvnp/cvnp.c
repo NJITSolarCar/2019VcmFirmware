@@ -335,8 +335,8 @@ void cvnp_procFrame(tCanFrame *frame) {
 	uint32_t now = cvnpHal_now();
 	bool hit = false;
 
-	// True if the noncompliant bit is set or the frame uses an 11-bit (standard) id
-	bool isCompliant = !frame->head.ide;
+	// True if the noncompliant bit is not set or the frame uses an 29-bit (extended) id
+	bool isCompliant = frame->head.ide;
 
 	// True if the frame is specifically directed at this device, or is
 	// a multicast that includes this device
@@ -528,7 +528,7 @@ bool cvnp_registerNonCHandler(tNonCHandler *handler) {
 	bool alreadyExists;
 	for(int i=0; i<CVNP_NONCOMPLIANT_BUF_SIZE; i++) {
 		alreadyExists = g_pNonCTable[i].valid &&
-				_cvnp_compareNonCHandler(handler, &g_pNonCTable[i]);
+				!_cvnp_compareNonCHandler(handler, &g_pNonCTable[i]);
 		if(alreadyExists) { // Replace the handler and return
 			g_pNonCTable[i] = *handler;
 			return true;
@@ -537,7 +537,7 @@ bool cvnp_registerNonCHandler(tNonCHandler *handler) {
 
 	// Check for the first invalid handler slot in the buffer to add to
 	for(int i=0; i<CVNP_NONCOMPLIANT_BUF_SIZE; i++) {
-		if(g_pNonCTable[i].valid) {
+		if(!g_pNonCTable[i].valid) {
 			g_pNonCTable[i] = *handler;
 			return true;
 		}
