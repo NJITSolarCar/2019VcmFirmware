@@ -21,6 +21,8 @@
 // this many ticks, query R, wait this many ticks, etc.
 #define KBL_TICK_UPDATE_PERIOD				5
 
+#define KBL_CAN_TIMEOUT						50
+
 // Frame IDs for the left and right motor
 #define KBL_ID_TX_LEFT						0x70
 #define KBL_ID_TX_RIGHT						0x71
@@ -36,7 +38,7 @@
 #define KBL_FRAME_COM_SW_REV				0x44
 #define KBL_FRAME_COM_SW_BRK				0x43
 
-#define KBL_VBAT_SCL						0.369 // 1/2.71
+#define KBL_VBAT_SCL						/*0.369 // 1/2.71*/ 0.486
 #define KBL_THROTTLE_SCL					0.0196078f // 5/255
 #define KBL_VS_TO_VOLTS(x)					((((float)(x-120))*0.0357f)+4.75f) // Conversion of hall sensor voltage from ADC reading to an analog voltage
 

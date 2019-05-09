@@ -39,7 +39,7 @@ void _kbl_parseA2DBatch1(tCanFrame *frame, bool isLeft) {
  */
 void _kbl_parseA2DBatch2(tCanFrame *frame, bool isLeft) {
 	tMotorData *dat = isLeft ? &g_lMotData : &g_rMotData;
-	dat->ia = (float)frame->data[0];
+	dat->ia = (float)frame->data[0] ;
 	dat->ib = (float)frame->data[1];
 	dat->ic = (float)frame->data[2];
 	dat->va = ((float)frame->data[3]) * KBL_VBAT_SCL;
@@ -123,7 +123,7 @@ void _kbl_parseComSwRev(tCanFrame *frame, bool isLeft) {
  * sub-parse routine.
  */
 void _kbl_parseFrameGen(tCanFrame *frame) {
-	bool isLeft = frame->id == KBL_ID_TX_LEFT;
+	bool isLeft = frame->id == KBL_ID_RX_LEFT;
 	uint8_t query = isLeft ? g_lMotQuery : g_rMotQuery;
 
 	switch(query) {
@@ -163,12 +163,31 @@ void _kbl_parseFrameGen(tCanFrame *frame) {
 
 
 
+void _kbl_onFrameTimeout(bool wasKilled) {
+
+}
+
+
+
 
 /**
- * Initializes the motor controller driver. Currently does nothing.
+ * Initializes the motor controller driver. Binds the two frame handlers for
+ * the CVNP API
  */
 void kbl_init() {
+	tNonCHandler kblHdl;
+	kblHdl.id = KBL_ID_RX_LEFT;
+	kblHdl.lastRun = 0;
+	kblHdl.timeout = KBL_CAN_TIMEOUT;
+	kblHdl.valid = true;
+	kblHdl.pfnOnDeath = _kbl_onFrameTimeout;
+	kblHdl.pfnProcFrame = _kbl_parseFrameGen;
 
+	// Register the two handlers for left and right
+	cvnp_registerNonCHandler(&kblHdl);
+
+	kblHdl.id = KBL_ID_RX_RIGHT;
+	cvnp_registerNonCHandler(&kblHdl);
 }
 
 /**
@@ -223,6 +242,12 @@ void kbl_tick() {
 			state = 0;
 		}
 		}
+
+		// Save query byte
+		if(isLeft)
+			g_lMotQuery = queryType;
+		else
+			g_rMotQuery = queryType;
 
 		// transmit the query
 		tCanFrame txFrame;
