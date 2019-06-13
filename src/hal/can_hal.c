@@ -192,7 +192,7 @@ void cvnpHal_sendFrame(tCanFrame frame) {
 	while(i<=2*CAN_MAX_BUF_SIZE && ((txStat >> i) & 1))
 		i++;
 
-	if(i>= CAN_MAX_BUF_SIZE) {
+	if(i>= 2*CAN_MAX_BUF_SIZE) {
 		tFaultData dat;
 		// TODO: Add proper data for this fault
 		dat.ui64 = 0;

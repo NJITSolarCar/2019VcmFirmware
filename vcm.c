@@ -305,8 +305,8 @@ static void vcm_tick() {
 	thermo_getTemp(g_thermoTemp);
 
 	bms_tick();
-	kbl_tick();
-	mppt_tick();
+//	kbl_tick();
+//	mppt_tick();
 	cvnp_tick();
 
 	// Always sample the thermistor and report

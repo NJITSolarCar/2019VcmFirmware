@@ -27,6 +27,9 @@
 // Value of shunt resistor used
 #define INA_SHUNT			1.0E-3f
 
+// Nominal efficiency of the onboard dc-dc converter
+#define INA_DCDC_EFF		0.9f
+
 /**
  * Gain settings of the INA
  */

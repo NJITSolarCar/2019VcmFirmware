@@ -261,6 +261,16 @@ void kbl_tick() {
 }
 
 
+tMotorData *kbl_leftMotData() {
+	return &g_lMotData;
+}
+
+
+tMotorData *kbl_rightMotData() {
+	return &g_rMotData;
+}
+
+
 
 
 

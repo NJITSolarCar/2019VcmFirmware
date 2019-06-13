@@ -264,7 +264,84 @@ bool _vcmio_cvnp_ddef48(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
  * represented as signed integers, where 1 LSB corresponds to 10mA.
  */
 bool _vcmio_cvnp_ddef61(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
-	// Calculate system currents
+	float iAux, iChg;
+	int16_t batt, aux, chg, mot;
+
+	tBMSData *bmsDat = bms_data();
+	tMotorData *lMotDat = kbl_leftMotData();
+	tMotorData *rMotDat = kbl_rightMotData();
+
+	// Only do the current calculation if the HV bus is active
+	if(relay_getDischarge() &&
+			relay_getBattMinus() &&
+			relay_getBattPlus()) {
+		iAux = ina_getCurrent() * (12.0f / bmsDat->vBat) * INA_DCDC_EFF;
+	} else
+		iAux = 0;
+
+	// Kirchoff's law for batt+ rail
+	iChg = iAux + lMotDat->iMot + rMotDat->iMot - bmsDat->vBat;
+
+	// Convert to transport representation
+	batt = (int16_t)(bmsDat->iBat * 100.0f);
+	aux = (int16_t)(iAux * 100.0f);
+	chg = (int16_t)(iChg * 100.0f);
+	mot = (int16_t)((lMotDat->iMot + rMotDat->iMot) * 100.0f);
+
+	// Write out
+	UTIL_INT_TO_BYTEARR(pData, batt);
+	UTIL_INT_TO_BYTEARR(pData+2, aux);
+	UTIL_INT_TO_BYTEARR(pData+4, mot);
+	UTIL_INT_TO_BYTEARR(pData+6, chg);
+
+	*pLen = 8;
+
+	return true;
+}
+
+
+
+/**
+ * DDEF 62 POWER_DIST
+ * Power production and consumption across the vehicle. While for some systems this may be
+ * directly calculable, for others calculating current and power statistics is less direct. For those only
+ * estimates are provided. All power statistics follow the standard convention for power signs, where
+ * negative values correspond to power supplied to the system, and positive to consumed power. Units are
+ * in two’s compliment Watts
+ */
+bool _vcmio_cvnp_ddef62(tCanFrame *frame, uint32_t *pLen, uint8_t pData[8]) {
+	float iAux, iChg;
+	int16_t batt, aux, chg, mot;
+
+	tBMSData *bmsDat = bms_data();
+	tMotorData *lMotDat = kbl_leftMotData();
+	tMotorData *rMotDat = kbl_rightMotData();
+
+	// Only do the current calculation if the HV bus is active
+	if(relay_getDischarge() &&
+			relay_getBattMinus() &&
+			relay_getBattPlus()) {
+		iAux = ina_getCurrent() * (12.0f / bmsDat->vBat) * INA_DCDC_EFF;
+	} else
+		iAux = 0;
+
+	// Kirchoff's law for batt+ rail
+	iChg = iAux + lMotDat->iMot + rMotDat->iMot - bmsDat->vBat;
+
+	// Convert to transport representation
+	batt = (int16_t)(bmsDat->iBat * bmsDat->vBat);
+	aux = (int16_t)(iAux * bmsDat->vBat);
+	chg = (int16_t)(iChg * bmsDat->vBat);
+	mot = (int16_t)((lMotDat->iMot + rMotDat->iMot) * bmsDat->vBat);
+
+	// Write out
+	UTIL_INT_TO_BYTEARR(pData, batt);
+	UTIL_INT_TO_BYTEARR(pData+2, aux);
+	UTIL_INT_TO_BYTEARR(pData+4, mot);
+	UTIL_INT_TO_BYTEARR(pData+6, chg);
+
+	*pLen = 8;
+
 	return true;
 }
 
