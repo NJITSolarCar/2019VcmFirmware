@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "fault.h"
+#include "util.h"
 
 // List of all faults, handlers, and their data in the system
 static tFaultHook g_faults[FAULT_NUM_FAULTS];
@@ -81,6 +82,7 @@ void fault_assert(uint32_t ui32FaultNum, tFaultData uData) {
 		fh->bSet = true;
 		fh->pfnOnAssert(uData);
 		fh->uData = uData;
+		fh->ui32TSet = util_msTimestamp();
 	}
 }
 

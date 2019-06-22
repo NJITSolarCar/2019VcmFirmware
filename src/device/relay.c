@@ -17,6 +17,9 @@
 // Relay master enable flag
 static bool g_relayEnable = false;
 
+// Relay override enable flag
+static bool g_relayOverride = false;
+
 // Individual relay state flags
 static bool g_battPlusState = false;
 static bool g_battMinusState = false;
@@ -53,35 +56,35 @@ void relay_init() {
  */
 void relay_setBattPlus(bool on) {
 	g_battPlusState = on;
-	uint8_t outState = on && g_relayEnable ? 0xFF : 0;
+	uint8_t outState = g_relayOverride || (on && g_relayEnable) ? 0xFF : 0;
 	GPIOPinWrite(BATPOS_RLY_PORT, BATPOS_RLY_PIN, outState);
 }
 
 
 void relay_setBattMinus(bool on) {
 	g_battMinusState = on;
-	uint8_t outState = on && g_relayEnable ? 0xFF : 0;
+	uint8_t outState =  g_relayOverride || (on && g_relayEnable) ? 0xFF : 0;
 	GPIOPinWrite(BATNEG_RLY_PORT, BATNEG_RLY_PIN, outState);
 }
 
 
 void relay_setDischarge(bool on) {
 	g_dischargeState = on;
-	uint8_t outState = on && g_relayEnable ? 0xFF : 0;
+	uint8_t outState =  g_relayOverride || (on && g_relayEnable) ? 0xFF : 0;
 	GPIOPinWrite(DISCHG_RLY_PORT, DISCHG_RLY_PIN, outState);
 }
 
 
 void relay_setCharge(bool on) {
 	g_chargeState = on;
-	uint8_t outState = on && g_relayEnable ? 0xFF : 0;
+	uint8_t outState =  g_relayOverride || (on && g_relayEnable) ? 0xFF : 0;
 	GPIOPinWrite(CHG_RLY_PORT, CHG_RLY_PIN, outState);
 }
 
 
 void relay_setSolar(bool on) {
 	g_solarState = on;
-	uint8_t outState = on && g_relayEnable ? 0xFF : 0;
+	uint8_t outState =  g_relayOverride || (on && g_relayEnable) ? 0xFF : 0;
 	GPIOPinWrite(SOLAR_RLY_PORT, SOLAR_RLY_PIN, outState);
 }
 
@@ -145,6 +148,11 @@ bool relay_getSolar() {
 	return !!GPIOPinRead(SOLAR_RLY_PORT, SOLAR_RLY_PIN);
 }
 
+
+
+void relay_override(bool enable) {
+	g_relayOverride = enable;
+}
 
 
 

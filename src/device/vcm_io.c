@@ -24,6 +24,7 @@
 #include "../fault.h"
 #include "../cvnp/cvnp.h"
 #include "../cvnp/cvnp_hal.h"
+#include "relay.h"
 
 #include "../util.h"
 

@@ -36,7 +36,7 @@ static tBmsFlag0 _bms_byteToFlag0(uint8_t b) {
 	f.cellUVFault = (b >> 3) & 1;
 	f.thermistorFault = (b >> 4) & 1;
 	f.overTempFault = (b >> 5) & 1;
-	// Skip bit 6, we don't need heatsink thermistor fault
+	f.internalTempFault = (b >> 6) & 1;
 	f.cellOpenWiringFault = (b >> 7) & 1;
 
 	return f;
@@ -97,7 +97,7 @@ void _bms_checkCurrentFaults() {
 	}
 
 	// Same behavior for charge as for discharge
-	else if (g_bmsData.iBat <= BMS_CHG_OVERCURRENT_THRESH) {
+	else if (g_bmsData.iBat >= BMS_CHG_OVERCURRENT_THRESH) {
 		if (g_transientOCStart == 0)
 			g_transientOCStart = util_msTimestamp();
 		else if (util_msTimestamp()-g_transientOCStart> BMS_TRANSIENT_OVERCURRENT_TIME) {
@@ -279,17 +279,23 @@ static void _bms_parseCellBroadcast(tCanFrame *frame) {
 	// highest cell
 	tFaultData fDat;
 	fDat.pfloat[0] = dat->voltage;
-	if(frame->data[0] == g_bmsData.vMinIdx && dat->voltage < BMS_MIN_CELL_WARN_VOLTS) {
-		uint32_t fault = g_bmsData.vBat < BMS_PACK_MIN_VOLTS ?
-				FAULT_BMS_PACK_UNDER_VOLT :
-				FAULT_BMS_PACK_UNDER_VOLT_WARN;
-		fault_assert(fault, fDat);
-	}
-	if(frame->data[0] == g_bmsData.vMaxIdx && dat->voltage > BMS_MAX_CELL_WARN_VOLTS) {
-		uint32_t fault = g_bmsData.vBat > BMS_PACK_MAX_VOLTS ?
-				FAULT_BMS_CELL_OVER_VOLT :
-				FAULT_BMS_CELL_OVER_VOLT_WARN;
-		fault_assert(fault, fDat);
+
+	dat->valid = true;
+
+	// Only check min / max if both cell voltages are valid
+	if(g_bmsData.cellData[g_bmsData.vMinIdx].valid && g_bmsData.cellData[g_bmsData.vMaxIdx].valid) {
+		if(frame->data[0] == g_bmsData.vMinIdx && dat->voltage < BMS_MIN_CELL_WARN_VOLTS) {
+			uint32_t fault = g_bmsData.vBat < BMS_PACK_MIN_VOLTS ?
+					FAULT_BMS_PACK_UNDER_VOLT :
+					FAULT_BMS_PACK_UNDER_VOLT_WARN;
+			fault_assert(fault, fDat);
+		}
+		if(frame->data[0] == g_bmsData.vMaxIdx && dat->voltage > BMS_MAX_CELL_WARN_VOLTS) {
+			uint32_t fault = g_bmsData.vBat > BMS_PACK_MAX_VOLTS ?
+					FAULT_BMS_CELL_OVER_VOLT :
+					FAULT_BMS_CELL_OVER_VOLT_WARN;
+			fault_assert(fault, fDat);
+		}
 	}
 }
 
@@ -300,6 +306,11 @@ static void _bms_parseCellBroadcast(tCanFrame *frame) {
  * the CVNP api
  */
 void bms_init() {
+
+	// Reset all valid bits for cell indicies
+	for(int i=0; i<BMS_NUM_CELLS; i++)
+		g_bmsData.cellData[i].valid = false;
+
 	// Temporary handler structure
 	tNonCHandler tmpHdl;
 

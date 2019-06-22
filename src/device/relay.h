@@ -59,4 +59,10 @@ void relay_enable(bool enable);
 void relay_setFromFaults();
 
 
+/**
+ * Overrides the current relay state to force the outputs on
+ */
+void relay_override(bool enable);
+
+
 #endif /* SRC_DEVICE_RELAY_H_ */

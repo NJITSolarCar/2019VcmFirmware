@@ -44,6 +44,7 @@
 typedef struct {
     float voltage;
     float resistance;
+    bool valid;
 } tCellData;
 
 

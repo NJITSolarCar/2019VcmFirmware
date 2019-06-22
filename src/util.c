@@ -15,7 +15,7 @@
  * Returns the current millisecond timestamp of the system
  */
 uint32_t util_msTimestamp() {
-	return (uint32_t)(TimerValueGet64(SYS_US_TIMER_BASE) / 1000);
+	return (uint32_t)(TimerValueGet64(SYS_US_TIMER_BASE) / 80000ULL);
 }
 
 
@@ -24,5 +24,5 @@ uint32_t util_msTimestamp() {
  * Returns the current microsecond timestamp of the system
  */
 uint64_t util_usTimestamp() {
-	return TimerValueGet64(SYS_US_TIMER_BASE);
+	return TimerValueGet64(SYS_US_TIMER_BASE) / 80ULL;
 }

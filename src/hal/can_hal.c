@@ -197,6 +197,7 @@ void cvnpHal_sendFrame(tCanFrame frame) {
 		// TODO: Add proper data for this fault
 		dat.ui64 = 0;
 		fault_assert(FAULT_VCM_COMM, dat);
+
 	}
 
 	// CAN Message objects are 1 indexed, not 0 indexed

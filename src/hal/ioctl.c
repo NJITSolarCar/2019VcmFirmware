@@ -78,10 +78,11 @@ void ioctl_reset() {
     FPULazyStackingEnable();
     FPUEnable();
 
-    // Configure and start the clock timer
-    TimerConfigure(SYS_US_TIMER_BASE, TIMER_CFG_ONE_SHOT_UP);
-    TimerLoadSet64(SYS_US_TIMER_BASE, 0);
-    TimerPrescaleSet(SYS_US_TIMER_BASE, TIMER_A, 80);
+    // Configure and start the clock timer. One shot was not working,
+    // so use periodic, as it can't possibly overflow
+    TimerConfigure(SYS_US_TIMER_BASE, TIMER_CFG_PERIODIC_UP);
+    TimerLoadSet64(SYS_US_TIMER_BASE, 0xFFFFFFFFFFFFFFFF);
+    TimerControlStall(SYS_US_TIMER_BASE, TIMER_A, true);
     TimerEnable(SYS_US_TIMER_BASE, TIMER_A);
 
     // Configure (but don't start) the watchdog with Non-maskable interrupt,

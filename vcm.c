@@ -304,8 +304,9 @@ static void vcm_tick() {
 	// calc results
 	thermo_getTemp(g_thermoTemp);
 
+	gpio_tick();
 	bms_tick();
-//	kbl_tick();
+	kbl_tick();
 //	mppt_tick();
 	cvnp_tick();
 
@@ -341,7 +342,7 @@ int main(void)
 	bms_init();
 	ina_init();
 	kbl_init();
-	mppt_init();
+//	mppt_init();
 	relay_init();
 	thermo_init();
 	vcmio_init();
