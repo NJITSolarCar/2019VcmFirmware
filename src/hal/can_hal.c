@@ -80,6 +80,13 @@ void _can_rxIntHandler() {
 	if(intStat > 32) { // For status / error / tx done interrupts
 		// Clear the error interrupts
 		intStat = CANStatusGet(CAN_RX_IFACE, CAN_STS_CONTROL);
+
+		// Try restarting the CAN bus
+		if(intStat == CAN_STATUS_BUS_OFF) {
+			CANDisable(CAN_RX_IFACE);
+			cvnpHal_init();
+		}
+
 		if(intStat == CAN_STATUS_TXOK) {
 			// Do nothing, we don't care about TX interrupts
 		} else {
@@ -140,7 +147,7 @@ bool cvnpHal_init() {
 	g_rxMsg.pui8MsgData = g_rxBuf;
 	g_rxMsg.ui32MsgIDMask = 0x0;
 	g_rxMsg.ui32MsgLen = 8;
-	g_rxMsg.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
+	g_rxMsg.ui32Flags = MSG_OBJ_RX_INT_ENABLE/* | MSG_OBJ_USE_ID_FILTER*/;
 
 	// Use a singular mailbox for RX for each standard and extended ID for now
 	CANMessageSet(CAN_RX_IFACE, 1, &g_rxMsg, MSG_OBJ_TYPE_RX);
@@ -163,12 +170,17 @@ bool cvnpHal_init() {
 	}*/
 
 	// Prepare the TX buffer. Sits in the second half of the mailbox
-	for(int i=CAN_MAX_BUF_SIZE; i<2*CAN_MAX_BUF_SIZE; i++) {
+	/*for(int i=CAN_MAX_BUF_SIZE; i<2*CAN_MAX_BUF_SIZE; i++) {
 			CANMessageSet(CAN_RX_IFACE,
 						  i+1,
 						  &g_txMsg,
 						  MSG_OBJ_TYPE_TX);
-		}
+		}*/
+
+	/*CANMessageSet(CAN_RX_IFACE,
+				  3,
+				  &g_txMsg,
+				  MSG_OBJ_TYPE_TX);*/
 
 	// Enable the CAN bus
 	CANIntEnable(CAN_RX_IFACE, CAN_INT_ERROR | CAN_INT_MASTER | CAN_INT_STATUS);
@@ -185,8 +197,14 @@ bool cvnpHal_init() {
 void cvnpHal_sendFrame(tCanFrame frame) {
 	_can_cvnpFrameToTiva(&frame, &g_txMsg);
 
-	// Find highest clear message ID
 	uint32_t txStat = CANStatusGet(CAN_RX_IFACE, CAN_STS_TXREQUEST);
+	CANMessageSet(CAN_RX_IFACE,
+				  3,
+				  &g_txMsg,
+				  MSG_OBJ_TYPE_TX);
+
+	// Find highest clear message ID
+	/*uint32_t txStat = CANStatusGet(CAN_RX_IFACE, CAN_STS_TXREQUEST);
 
 	int i=CAN_MAX_BUF_SIZE+1;
 	while(i<=2*CAN_MAX_BUF_SIZE && ((txStat >> i) & 1))
@@ -199,9 +217,10 @@ void cvnpHal_sendFrame(tCanFrame frame) {
 		fault_assert(FAULT_VCM_COMM, dat);
 
 	}
-
-	// CAN Message objects are 1 indexed, not 0 indexed
-	CANMessageSet(CAN_RX_IFACE, i, &g_txMsg, MSG_OBJ_TYPE_TX);
+	else {
+		// CAN Message objects are 1 indexed, not 0 indexed
+		CANMessageSet(CAN_RX_IFACE, i, &g_txMsg, MSG_OBJ_TYPE_TX);
+	}*/
 }
 
 
