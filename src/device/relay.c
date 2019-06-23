@@ -9,10 +9,60 @@
 #include <stdbool.h>
 
 #include <driverlib/gpio.h>
+#include <driverlib/interrupt.h>
+
+#include "inc/hw_types.h"
+#include "inc/hw_gpio.h"
+#include "inc/hw_memmap.h"
 
 #include "relay.h"
 #include "../fault.h"
 #include "../hal/resource.h"
+
+
+const uint8_t RELAY_FAULT_MAP[FAULT_NUM_FAULTS] =
+{
+ 0x00,
+ 0x00,
+ 0x1F,
+ 0x1C,
+ 0x1B,
+ 0x1C,
+ 0x1B,
+ 0x1C,
+ 0x1B,
+ 0x00,
+ 0x1B,
+ 0x1F,
+ 0x00,
+ 0x1F,
+ 0x1F,
+ 0x00,
+ 0x1F,
+ 0x00,
+ 0x1F,
+ 0x00,
+ 0x00,
+ 0x1F,
+ 0x1F,
+ 0x1F,
+ 0x1F,
+ 0x1B,
+ 0x1F,
+ 0x1F,
+ 0x1F,
+ 0x1F,
+ 0x1F,
+ 0x1F,
+ 0x1F,
+ 0x1F,
+ 0x1C,
+ 0x1F,
+ 0x1F,
+ 0x1F,
+ 0x1F
+};
+
 
 // Relay master enable flag
 static bool g_relayEnable = false;
@@ -47,6 +97,12 @@ void relay_init() {
 	GPIOPinTypeGPIOOutput(DISCHG_RLY_PORT, DISCHG_RLY_PIN);
 	GPIOPinTypeGPIOOutput(SOLAR_RLY_PORT, SOLAR_RLY_PIN);
 	GPIOPinTypeGPIOOutput(BATPOS_RLY_PORT, BATPOS_RLY_PIN);
+
+	// BattNeg uses an NMI pin, so it has to be unlocked
+	// before use
+	HWREG(GPIO_PORTF_BASE+GPIO_O_LOCK) = GPIO_LOCK_KEY;
+	HWREG(GPIO_PORTF_BASE+GPIO_O_CR) |= GPIO_PIN_0;
+
 	GPIOPinTypeGPIOOutput(BATNEG_RLY_PORT, BATNEG_RLY_PIN);
 }
 
@@ -168,8 +224,28 @@ void relay_override(bool enable) {
  * at all.
  */
 void relay_setFromFaults() {
-	// TODO: develop a fault-relay table and use that
+	// Disable interrupt handling while doing this
+	IntMasterDisable();
+	uint64_t faults = fault_getFaultSummary();
+	uint32_t relayStates = 0x1F; // Start with all on
+
+	for(int i=0; i<FAULT_NUM_FAULTS; i++) {
+		if((faults >> i) & 0x1) {
+			relayStates &= RELAY_FAULT_MAP[i];
+		}
+	}
+
+	// Set all relays
+	relay_setBattPlus(relayStates & 0x10);
+	relay_setBattMinus(relayStates & 0x8);
+	relay_setDischarge(relayStates & 0x4);
+	relay_setCharge(relayStates & 0x2);
+	relay_setSolar(relayStates & 0x1);
+
+	// Restart interrupt processing
+	IntMasterEnable();
 }
+
 
 
 

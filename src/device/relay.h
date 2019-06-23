@@ -9,6 +9,14 @@
 #define SRC_DEVICE_RELAY_H_
 
 #include <stdbool.h>
+#include <stdint.h>
+#include "../fault.h"
+
+/**
+ * Mapping between fault codes and allowed relay states
+ */
+const extern uint8_t RELAY_FAULT_MAP[FAULT_NUM_FAULTS];
+
 
 /**
  * Initialize relay system

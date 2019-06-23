@@ -22,6 +22,7 @@ void gpio_init();
 
 void gpio_tick();
 
+bool gpio_ignitionActive();
 
 /**
  * Relay controls

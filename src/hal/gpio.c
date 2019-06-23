@@ -27,21 +27,23 @@
 #include "../util.h"
 
 // ms timestamps of the last registered interrupt on each pin
-static uint32_t g_lastBmsDclChg;
 static uint32_t g_lastIgnitionChg;
 static uint32_t g_lastMpptUserSwChg;
 static uint32_t g_lastRelayForceChg;
 
 // Last valid states of the pins
-static bool g_lastBmsDclState;
 static bool g_lastIgnitionState;
 static bool g_lastMpptUserSwState;
 static bool g_lastRelayForceState;
+
+// Ignition state of the vehicle
+static bool g_ignitionActive;
 
 
 
 
 static inline void _gpio_ignitionChg(bool isOn) {
+	g_ignitionActive = !isOn;
 	if(!isOn) { // Switch logic is inverted
 		relay_enable(true);
 		if(!fault_getFaultSummary())
@@ -63,7 +65,12 @@ static inline void _gpio_mpptUserSwChg(bool isOn) {
 }
 
 static inline void _gpio_relayForceChg(bool isOn) {
-	relay_override(!isOn); // Switch logic is inverted
+	if(!isOn) { // Switch logic is inverted
+		tFaultData dat;
+		dat.ui64 = 0;
+		fault_assert(FAULT_RELAY_OVERRIDE, dat);
+	} else
+		fault_deassert(FAULT_RELAY_OVERRIDE);
 }
 
 
@@ -114,7 +121,6 @@ void gpio_init() {
 	GPIOIntRegister(GPIO_PORTB_BASE, _gpio_intPortB);
 
 	// Set initial states
-	g_lastBmsDclState = !!GPIOPinRead(BMS_DCL_PORT, BMS_DCL_PIN);
 	g_lastIgnitionState = !!GPIOPinRead(DASH_IGNITION_PORT, DASH_IGNITION_PIN);
 	g_lastMpptUserSwState = !!GPIOPinRead(DASH_MPPT_PORT, DASH_MPPT_PIN);
 	g_lastRelayForceState = !!GPIOPinRead(DASH_RELAY_FORCE_PORT, DASH_RELAY_FORCE_PIN);
@@ -148,6 +154,12 @@ void gpio_tick() {
 		g_lastRelayForceState ^= 1; // State has toggled, so flip the flag accordingly
 		_gpio_relayForceChg(g_lastRelayForceState);
 	}
+}
+
+
+
+bool gpio_ignitionActive() {
+	return g_ignitionActive;
 }
 
 

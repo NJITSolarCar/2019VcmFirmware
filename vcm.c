@@ -54,6 +54,7 @@
 
 // CVNP
 #include "src/cvnp/cvnp.h"
+#include "src/cvnp/cvnp_hal.h"
 
 // Driverlib includes
 #include <driverlib/systick.h>
@@ -70,8 +71,19 @@
  * Base action for all faults: report it over CVNP. This will send a broadcast frame
  * with information about this fault.
  */
-static void vcm_defaultFaultAssertAction(tFaultData dat) {
+static void vcm_defaultFaultAssertAction(tFaultData dat, uint32_t id) {
 	// TODO: implement broadcast transmission via CVNP
+	relay_setFromFaults();
+	indicator_setFromFaults();
+
+	tCanFrame fr;
+	fr.id = 2000 + id;
+	for(int i=0; i<8; i++) {
+		fr.data[i] = dat.pui8[i];
+	}
+	fr.head.dlc = 8;
+	fr.head.ide = true;
+	cvnpHal_sendFrame(fr);
 }
 
 
@@ -79,220 +91,204 @@ static void vcm_defaultFaultAssertAction(tFaultData dat) {
 
 
 
-static void vcm_BmsVoltWarnHandler(tFaultData dat) {
-	indicator_setPattern(LED_STAT_VOLT_WARN);
-	vcm_defaultFaultAssertAction(dat);
+//static void vcm_BmsVoltWarnHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+//
+//static void vcm_BmsPackShortFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+//
+//static void vcm_BmsCommFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+//
+//static void vcm_BmsOverCurrentChgFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+//
+//static void vcm_BmsOverCurrentDischgFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+//
+//static void vcm_BmsOverVoltFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+//
+//static void vcm_BmsUnderVoltFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+//
+//static void vcm_BmsGenFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+//
+//static void vcm_TempFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+//
+//static void vcm_TempWarnHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+///**
+// * NOTE: For all MPPT faults except FAULT_MPPT_NO_BATT, which needs to
+// * be addressed separately, as it can be thrown during otherwise normal
+// * operation (charge relay opened)
+// */
+//static void vcm_mpptGenFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+//static void vcm_mpptNoBattFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+//static void vcm_mpptCommFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+//static void vcm_kblGenFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+//static void vcm_kblCommFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+//static void vcm_mpptUserLockoutFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//static void vcm_vcmThermFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+///**
+// * For FAULT_CVNP_INTERNAL, FAULT_VCM_COMM, FAULT_GEN_AUX_OVER_DISCHARGE,
+// * and FAULT_GEN_ESTOP
+// */
+//static void vcm_vcmGenFaultHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+//
+//
+//
+//static void vcm_vcmCrashHandler(tFaultData dat) {
+//	vcm_defaultFaultAssertAction(dat);
+//}
+
+
+static void vcm_relayOverrideHandler(tFaultData dat, uint32_t id) {
+	relay_override(true);
+	vcm_defaultFaultAssertAction(dat, id);
 }
 
 
+static void vcm_defaultDeassert(uint32_t id) {
+	relay_setFromFaults();
+	indicator_setFromFaults();
 
-
-static void vcm_BmsPackShortFaultHandler(tFaultData dat) {
-	relay_setAll(false);
-	indicator_setPattern(LED_STAT_PACK_SHORT);
-	vcm_defaultFaultAssertAction(dat);
+	tCanFrame fr;
+	fr.id = 3000 + id;
+	fr.head.dlc = 0;
+	fr.head.ide = true;
+	cvnpHal_sendFrame(fr);
 }
 
 
-
-
-static void vcm_BmsCommFaultHandler(tFaultData dat) {
-	relay_setAll(false);
-	indicator_setPattern(LED_STAT_COMM);
-	vcm_defaultFaultAssertAction(dat);
+static void vcm_relayOverrideDeassertHandler(uint32_t id) {
+	relay_override(false);
+	vcm_defaultDeassert(id);
 }
 
-
-
-
-static void vcm_BmsOverCurrentChgFaultHandler(tFaultData dat) {
-	relay_setSolar(false);
-	relay_setCharge(false);
-	indicator_setPattern(LED_STAT_OVER_CHG_I);
-	vcm_defaultFaultAssertAction(dat);
-}
-
-
-
-
-static void vcm_BmsOverCurrentDischgFaultHandler(tFaultData dat) {
-	relay_setDischarge(false);
-	indicator_setPattern(LED_STAT_OVER_DISCHG_I);
-	vcm_defaultFaultAssertAction(dat);
-}
-
-
-
-
-static void vcm_BmsOverVoltFaultHandler(tFaultData dat) {
-	relay_setSolar(false);
-	relay_setCharge(false);
-	indicator_setPattern(LED_STAT_OVER_VOLT);
-	vcm_defaultFaultAssertAction(dat);
-}
-
-
-
-
-static void vcm_BmsUnderVoltFaultHandler(tFaultData dat) {
-	relay_setDischarge(false);
-	indicator_setPattern(LED_STAT_UNDER_VOLT);
-	vcm_defaultFaultAssertAction(dat);
-}
-
-
-
-
-static void vcm_BmsGenFaultHandler(tFaultData dat) {
-	relay_setAll(false);
-	indicator_setPattern(LED_STAT_GEN_FAULT);
-	vcm_defaultFaultAssertAction(dat);
-}
-
-
-
-
-static void vcm_TempFaultHandler(tFaultData dat) {
-	relay_setAll(false);
-	indicator_setPattern(LED_STAT_TEMP_FAULT);
-	vcm_defaultFaultAssertAction(dat);
-}
-
-
-
-
-static void vcm_TempWarnHandler(tFaultData dat) {
-	indicator_setPattern(LED_STAT_TEMP_WARN);
-	vcm_defaultFaultAssertAction(dat);
-}
-
-
-
-/**
- * NOTE: For all MPPT faults except FAULT_MPPT_NO_BATT, which needs to
- * be addressed separately, as it can be thrown during otherwise normal
- * operation (charge relay opened)
- */
-static void vcm_mpptGenFaultHandler(tFaultData dat) {
-	relay_setSolar(false);
-	indicator_setPattern(LED_STAT_MPPT_FAULT);
-	vcm_defaultFaultAssertAction(dat);
-}
-
-
-
-static void vcm_mpptNoBattFaultHandler(tFaultData dat) {
-	indicator_setPattern(LED_STAT_MPPT_FAULT);
-	vcm_defaultFaultAssertAction(dat);
-}
-
-
-
-static void vcm_mpptCommFaultHandler(tFaultData dat) {
-	relay_setSolar(false);
-	indicator_setPattern(LED_STAT_COMM);
-	vcm_defaultFaultAssertAction(dat);
-}
-
-
-
-static void vcm_kblGenFaultHandler(tFaultData dat) {
-	relay_setDischarge(false);
-	indicator_setPattern(LED_STAT_KBL_FAULT);
-	vcm_defaultFaultAssertAction(dat);
-}
-
-
-
-static void vcm_kblCommFaultHandler(tFaultData dat) {
-	relay_setDischarge(false);
-	indicator_setPattern(LED_STAT_COMM);
-	vcm_defaultFaultAssertAction(dat);
-}
-
-
-
-static void vcm_mpptUserLockoutFaultHandler(tFaultData dat) {
-	relay_setSolar(false);
-	indicator_setPattern(LED_STAT_MPPT_LOCK);
-}
-
-
-static void vcm_vcmThermFaultHandler(tFaultData dat) {
-	relay_setAll(false);
-	indicator_setPattern(LED_STAT_THERM_WIRING);
-	vcm_defaultFaultAssertAction(dat);
-}
-
-
-
-/**
- * For FAULT_CVNP_INTERNAL, FAULT_VCM_COMM, FAULT_GEN_AUX_OVER_DISCHARGE,
- * and FAULT_GEN_ESTOP
- */
-static void vcm_vcmGenFaultHandler(tFaultData dat) {
-	relay_setAll(false);
-	indicator_setPattern(LED_STAT_GEN_FAULT);
-	vcm_defaultFaultAssertAction(dat);
-}
-
-
-
-static void vcm_vcmCrashHandler(tFaultData dat) {
-	relay_setAll(false);
-	indicator_setPattern(LED_STAT_VCM_CRASH);
-	vcm_defaultFaultAssertAction(dat);
-}
-
-
-static void vcm_defaultDeassert() {
-	// Do nothing for now
-}
 
 
 /**
  * Bind all of the fault handlers for the VCM
  */
 static void vcm_bindFaultHandlers() {
-	fault_regHook(FAULT_BMS_CELL_OVER_VOLT_WARN, vcm_BmsVoltWarnHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_BMS_CELL_UNDER_VOLT_WARN, vcm_BmsVoltWarnHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_BMS_PACK_OVER_VOLT_WARN, vcm_BmsVoltWarnHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_BMS_PACK_UNDER_VOLT_WARN, vcm_BmsVoltWarnHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_BMS_PACK_SHORT, vcm_BmsPackShortFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_BMS_COMM, vcm_BmsCommFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_BMS_OVER_CURRENT_CHG, vcm_BmsOverCurrentChgFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_BMS_OVER_CURRENT_DISCHG, vcm_BmsOverCurrentDischgFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_BMS_CELL_OVER_VOLT, vcm_BmsOverVoltFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_BMS_CELL_UNDER_VOLT, vcm_BmsUnderVoltFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_BMS_PACK_OVER_VOLT, vcm_BmsOverVoltFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_BMS_PACK_UNDER_VOLT, vcm_BmsUnderVoltFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_BMS_LOW_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_BMS_HIGH_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_BMS_IMBALANCE, vcm_BmsGenFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_BMS_GENERAL, vcm_BmsGenFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_MPPT_TEMP_WARN, vcm_TempWarnHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_MPPT_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_MPPT_BATT_CHARGED, vcm_mpptGenFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_MPPT_NO_BATT, vcm_mpptNoBattFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_MPPT_LOW_SOLAR_VOLTS, vcm_mpptGenFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_MPPT_COMM, vcm_mpptCommFaultHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_CELL_OVER_VOLT_WARN, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_CELL_UNDER_VOLT_WARN, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_PACK_OVER_VOLT_WARN, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_PACK_UNDER_VOLT_WARN, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_PACK_SHORT, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_COMM, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_OVER_CURRENT_CHG, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_OVER_CURRENT_DISCHG, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_CELL_OVER_VOLT, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_CELL_UNDER_VOLT, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_PACK_OVER_VOLT, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_PACK_UNDER_VOLT, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_LOW_TEMP, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_HIGH_TEMP, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_IMBALANCE, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_BMS_GENERAL, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_MPPT_TEMP_WARN, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_MPPT_TEMP, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_MPPT_BATT_CHARGED, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_MPPT_NO_BATT, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_MPPT_LOW_SOLAR_VOLTS, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_MPPT_COMM, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
 	fault_regHook(FAULT_TELE_LORA, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
 	fault_regHook(FAULT_TELE_PI, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
 	fault_regHook(FAULT_TELE_COMM, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
-	fault_regHook(FAULT_MOTOR_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_MOTOR_GEN, vcm_kblGenFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_MOTOR_COMM, vcm_kblCommFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_GEN_ESTOP, vcm_vcmCrashHandler, vcm_defaultDeassert);
+	fault_regHook(FAULT_MOTOR_TEMP, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_MOTOR_GEN, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_MOTOR_COMM, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_GEN_ESTOP, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
 	fault_regHook(FAULT_GEN_AUX_OVER_DISCHARGE, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
 	fault_regHook(FAULT_CVNP_INTERNAL, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
-	fault_regHook(FAULT_VCM_COMM, vcm_vcmGenFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_VCM_WDT_FAIL, vcm_vcmCrashHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_VCM_THERMISTOR, vcm_vcmThermFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_VCM_HIGH_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_VCM_TEMP_WARN, vcm_TempWarnHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_VCM_LOW_TEMP, vcm_TempFaultHandler, vcm_defaultDeassert);
-	fault_regHook(FAULT_MPPT_USER_LOCKOUT, vcm_mpptUserLockoutFaultHandler, vcm_defaultDeassert);
-
+	fault_regHook(FAULT_VCM_COMM, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_VCM_WDT_FAIL, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_VCM_THERMISTOR, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_VCM_HIGH_TEMP, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_VCM_TEMP_WARN, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_VCM_LOW_TEMP, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_MPPT_USER_LOCKOUT, vcm_defaultFaultAssertAction, vcm_defaultDeassert);
+	fault_regHook(FAULT_RELAY_OVERRIDE, vcm_relayOverrideHandler, vcm_relayOverrideDeassertHandler);
 }
 
 
@@ -307,7 +303,7 @@ static void vcm_tick() {
 	gpio_tick();
 	bms_tick();
 	kbl_tick();
-//	mppt_tick();
+	//	mppt_tick();
 	cvnp_tick();
 
 	// Always sample the thermistor and report
@@ -334,15 +330,11 @@ int main(void)
 
 	cvnp_start(VCM_CVNP_MYCLASS, VCM_CVNP_MYINST);
 
-//	GPIOPinTypeGPIOInput(CAN_RX_PORT, CAN_RX_PIN);
-//	GPIOPinTypeGPIOInput(CAN_TX_PORT, CAN_TX_PIN);
-
 	// Module startup
 	indicator_init();
 	bms_init();
 	ina_init();
 	kbl_init();
-//	mppt_init();
 	relay_init();
 	thermo_init();
 	vcmio_init();
@@ -350,9 +342,13 @@ int main(void)
 	// relay_enable(true);
 	relay_enable(false);
 	relay_setAll(true);
+
+	indicator_setPattern(LED_STAT_STARTUP);
+
+	// Wait for a while to allow the rest of the system to boot
+	while(util_msTimestamp() < 3000);
+
 	indicator_setPattern(LED_STAT_NOFLT_DISBL);
-
-
 
 	// Systick startup
 	SysTickPeriodSet(VCM_SYSTICK_LOAD);

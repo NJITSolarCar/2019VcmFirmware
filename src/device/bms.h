@@ -23,17 +23,17 @@
 #define BMS_CELL_BROAD_TIMEOUT			100
 
 // Fault Thresholds
-#define BMS_CHG_OVERCURRENT_THRESH		75.0f	// Magnitude of maximum allowed charging current
-#define BMS_DIS_OVERCURRENT_THRESH		-75.0f	// Magnitude of maximum allowed discharge current
+#define BMS_CHG_OVERCURRENT_THRESH		60.0f	// Magnitude of maximum allowed charging current
+#define BMS_DIS_OVERCURRENT_THRESH		-60.0f	// Magnitude of maximum allowed discharge current
 #define BMS_TRANSIENT_OVERCURRENT_TIME	120		// number of milliseconds to allow a transient current greater than the max to occur before asserting a fault
 #define BMS_MIN_CELL_WARN_VOLTS			3.2f
 #define BMS_MIN_CELL_VOLTS				3.0f
 #define BMS_MAX_CELL_WARN_VOLTS			3.9f
-#define BMS_MAX_CELL_VOLTS				4.2f
-#define BMS_PACK_MIN_VOLTS				65.0f
+#define BMS_MAX_CELL_VOLTS				4.05f
+#define BMS_PACK_MIN_VOLTS				62.0f
 #define BMS_PACK_MIN_WARN_VOLTS			69.0f
 #define BMS_PACK_MAX_WARN_VOLTS			80.0f
-#define BMS_PACK_MAX_VOLTS				84.0f
+#define BMS_PACK_MAX_VOLTS				81.0f
 #define BMS_IMBALANCE_THRESH			0.5f
 #define BMS_CELL_MAX_TEMP				65.0f
 #define BMS_CELL_MIN_TEMP				1.0f // set above 0 to catch potential issues with 0 degree listed temperatures

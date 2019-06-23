@@ -20,6 +20,7 @@
 #define SRC_DEVICE_INDICATOR_H_
 
 #include <stdint.h>
+#include "../fault.h"
 
 /**
  * Represents an RGB color (as PWM duties from 0-255) for the LED. These
@@ -88,32 +89,35 @@ typedef struct {
 
 
 // Status to color / blink mappings
-extern const tLEDState LED_STAT_NOFLT_ENBL;
-extern const tLEDState LED_STAT_NOFLT_DISBL;
+extern tLEDState LED_STAT_NOFLT_ENBL;
+extern tLEDState LED_STAT_NOFLT_DISBL;
+extern tLEDState LED_STAT_STARTUP;
+extern tLEDState LED_STAT_OVERRIDE;
 
-extern const tLEDState LED_STAT_VCM_CRASH;
-extern const tLEDState LED_STAT_PACK_SHORT;
-extern const tLEDState LED_STAT_GEN_FAULT;
+extern tLEDState LED_STAT_VCM_CRASH;
+extern tLEDState LED_STAT_PACK_SHORT;
+extern tLEDState LED_STAT_GEN_FAULT;
 
-extern const tLEDState LED_STAT_OVER_VOLT;
-extern const tLEDState LED_STAT_VOLT_WARN;
-extern const tLEDState LED_STAT_UNDER_VOLT;
+extern tLEDState LED_STAT_OVER_VOLT;
+extern tLEDState LED_STAT_VOLT_WARN;
+extern tLEDState LED_STAT_UNDER_VOLT;
 
-extern const tLEDState LED_STAT_OVER_CHG_I;
-extern const tLEDState LED_STAT_CURRENT_WARN;
-extern const tLEDState LED_STAT_OVER_DISCHG_I;
+extern tLEDState LED_STAT_OVER_CHG_I;
+extern tLEDState LED_STAT_CURRENT_WARN;
+extern tLEDState LED_STAT_OVER_DISCHG_I;
 
-extern const tLEDState LED_STAT_COMM;
+extern tLEDState LED_STAT_COMM;
 
-extern const tLEDState LED_STAT_THERM_WIRING;
-extern const tLEDState LED_STAT_TEMP_WARN;
-extern const tLEDState LED_STAT_TEMP_FAULT;
-extern const tLEDState LED_STAT_MPPT_FAULT;
-extern const tLEDState LED_STAT_MPPT_LOCK;
+extern tLEDState LED_STAT_THERM_WIRING;
+extern tLEDState LED_STAT_TEMP_WARN;
+extern tLEDState LED_STAT_TEMP_FAULT;
+extern tLEDState LED_STAT_MPPT_FAULT;
+extern tLEDState LED_STAT_MPPT_LOCK;
 
-extern const tLEDState LED_STAT_KBL_FAULT;
+extern tLEDState LED_STAT_KBL_FAULT;
 
-
+// Mapping between fault and blink codes
+extern tLEDState *FAULT_LED_MAP[FAULT_NUM_FAULTS];
 
 /**
  * Initializes the RGB LED system hardware and timer. Clocks must be
@@ -136,5 +140,9 @@ void indicator_setPattern(tLEDState state);
  * with a call to indicator_setPattern(...)
  */
 void indiator_disable();
+
+
+// Sets the indicator pattern based on the current faults
+void indicator_setFromFaults();
 
 #endif /* SRC_DEVICE_INDICATOR_H_ */

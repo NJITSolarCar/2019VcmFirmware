@@ -17,44 +17,45 @@
  * in the system, as well as a flag for the number of faults
  */
 typedef enum {
-    FAULT_BMS_CELL_OVER_VOLT_WARN, // data: float[0]: cell voltage
-    FAULT_BMS_CELL_UNDER_VOLT_WARN, // data: float[0]: cell voltage
-    FAULT_BMS_PACK_OVER_VOLT_WARN, // data: float[0]: pack voltage
-    FAULT_BMS_PACK_UNDER_VOLT_WARN, // data: float[0]: pack voltage
-    FAULT_BMS_PACK_SHORT, // No data used for this fault.
-    FAULT_BMS_COMM, // data: ui64: true if wasKilled
-    FAULT_BMS_OVER_CURRENT_CHG, // data: float[0]: Absolute vale of current at the time of the fault
-    FAULT_BMS_OVER_CURRENT_DISCHG, // data: float[0]: Absolute vale of current at the time of the fault
-    FAULT_BMS_CELL_OVER_VOLT, // data: float[0]: cell voltage
-    FAULT_BMS_CELL_UNDER_VOLT, // data: float[0]: cell voltage
-    FAULT_BMS_PACK_OVER_VOLT, // data: float[0]: pack voltage
-    FAULT_BMS_PACK_UNDER_VOLT, // data: float[0]: pack voltage
-    FAULT_BMS_LOW_TEMP, // data: ui8[0]: thermistor ID; float[1]: temperature
-	FAULT_BMS_HIGH_TEMP, // data: ui8[0]: thermistor ID; ui8[1]: isBmsTempFault; float[1]: temperature
-    FAULT_BMS_IMBALANCE,
-    FAULT_BMS_GENERAL,
-    FAULT_MPPT_TEMP_WARN,
-    FAULT_MPPT_TEMP, // data: ui32[0]: MPPT ID; float[1]: MPPT temperature
-    FAULT_MPPT_BATT_CHARGED, // data: ui32[0]: MPPT ID; float[1]: vBat
-    FAULT_MPPT_NO_BATT, // data: ui32[0]: MPPT ID
-    FAULT_MPPT_LOW_SOLAR_VOLTS, // data: ui32[0]: MPPT ID; float[1]: vSolar
-    FAULT_MPPT_COMM, // data: ui32[0]: true if wasKilled; ui32[1]: MPPT ID
-    FAULT_TELE_LORA,
-    FAULT_TELE_PI,
-    FAULT_TELE_COMM,
-    FAULT_MOTOR_TEMP,
-    FAULT_MOTOR_GEN,
-    FAULT_MOTOR_COMM,
-    FAULT_GEN_ESTOP,
-    FAULT_GEN_AUX_OVER_DISCHARGE,
-	FAULT_CVNP_INTERNAL,
-	FAULT_VCM_COMM,
 	FAULT_VCM_WDT_FAIL, // data: no data used for this fault
+	FAULT_BMS_PACK_SHORT, // No data used for this fault.
+	FAULT_RELAY_OVERRIDE, // data: no data used for this fault
+	FAULT_BMS_OVER_CURRENT_CHG, // data: float[0]: Absolute vale of current at the time of the fault
+	FAULT_BMS_OVER_CURRENT_DISCHG, // data: float[0]: Absolute vale of current at the time of the fault
+	FAULT_BMS_CELL_OVER_VOLT, // data: float[0]: cell voltage
+	FAULT_BMS_CELL_UNDER_VOLT, // data: float[0]: cell voltage
+	FAULT_BMS_PACK_OVER_VOLT, // data: float[0]: pack voltage
+	FAULT_BMS_PACK_UNDER_VOLT, // data: float[0]: pack voltage
+	FAULT_BMS_COMM, // data: ui64: true if wasKilled
+	FAULT_BMS_IMBALANCE,
+	FAULT_BMS_LOW_TEMP, // data: ui8[0]: thermistor ID; float[1]: temperature
+	FAULT_BMS_HIGH_TEMP, // data: ui8[0]: thermistor ID; ui8[1]: isBmsTempFault; float[1]: temperature
+	FAULT_BMS_GENERAL,
 	FAULT_VCM_THERMISTOR, // data: ui32[0]: bits 0-2: fault state of each thermistor
 	FAULT_VCM_HIGH_TEMP, // data: ui32[0]: thermistor ID; float[1]: thermistor temperature
-	FAULT_VCM_TEMP_WARN, // data: ui32[0]: thermistor ID; float[1]: thermistor temperature
 	FAULT_VCM_LOW_TEMP, // data: ui32[0]: thermistor ID; float[1]: thermistor temperature
-    FAULT_MPPT_USER_LOCKOUT, // No data used
+	FAULT_MOTOR_COMM,
+	FAULT_GEN_AUX_OVER_DISCHARGE,
+	FAULT_CVNP_INTERNAL,
+	FAULT_VCM_COMM,
+	FAULT_MPPT_COMM, // data: ui32[0]: true if wasKilled; ui32[1]: MPPT ID
+	FAULT_TELE_LORA,
+	FAULT_TELE_PI,
+	FAULT_TELE_COMM,
+	FAULT_MOTOR_TEMP,
+	FAULT_MOTOR_GEN,
+	FAULT_MPPT_TEMP, // data: ui32[0]: MPPT ID; float[1]: MPPT temperature
+	FAULT_GEN_ESTOP,
+	FAULT_VCM_TEMP_WARN, // data: ui32[0]: thermistor ID; float[1]: thermistor temperature
+	FAULT_BMS_CELL_OVER_VOLT_WARN, // data: float[0]: cell voltage
+	FAULT_BMS_CELL_UNDER_VOLT_WARN, // data: float[0]: cell voltage
+	FAULT_BMS_PACK_OVER_VOLT_WARN, // data: float[0]: pack voltage
+	FAULT_BMS_PACK_UNDER_VOLT_WARN, // data: float[0]: pack voltage
+	FAULT_MPPT_USER_LOCKOUT, // No data used
+	FAULT_MPPT_TEMP_WARN,
+	FAULT_MPPT_BATT_CHARGED, // data: ui32[0]: MPPT ID; float[1]: vBat
+	FAULT_MPPT_NO_BATT, // data: ui32[0]: MPPT ID
+	FAULT_MPPT_LOW_SOLAR_VOLTS, // data: ui32[0]: MPPT ID; float[1]: vSolar
 	FAULT_NUM_FAULTS
 } tFaultCode;
 
@@ -64,11 +65,11 @@ typedef enum {
  * use
  */
 typedef union {
-    uint64_t ui64;
-    uint32_t pui32[2];
-    uint16_t pui16[4];
-    uint8_t pui8[8];
-    float pfloat[2];
+	uint64_t ui64;
+	uint32_t pui32[2];
+	uint16_t pui16[4];
+	uint8_t pui8[8];
+	float pfloat[2];
 } tFaultData;
 
 
@@ -78,11 +79,12 @@ typedef union {
  * to be called
  */
 typedef struct {
-    uint32_t bSet : 1;
-    uint32_t ui32TSet : 31;
-    void (*pfnOnAssert)(tFaultData);
-    void (*pfnOnDeassert)(void);
-    tFaultData uData;
+	uint32_t bSet : 1;
+	uint32_t ui32TSet : 31;
+	void (*pfnOnAssert)(tFaultData, uint32_t);
+	void (*pfnOnDeassert)(uint32_t);
+	tFaultData uData;
+	uint32_t _id;
 } tFaultHook;
 
 
@@ -129,7 +131,7 @@ uint32_t fault_getFaultTime(uint32_t fault);
 /**
  * Registers a set of handler functions for a certain fault number
  */
-void fault_regHook(uint32_t faultNum, void (*pfnOnAssert)(tFaultData), void (*pfnOnDeassert)(void));
+void fault_regHook(uint32_t faultNum, void (*pfnOnAssert)(tFaultData, uint32_t), void (*pfnOnDeassert)(uint32_t));
 
 #endif /* FAULT_H_ */
 

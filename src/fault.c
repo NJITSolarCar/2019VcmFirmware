@@ -17,7 +17,7 @@ static tFaultHook g_faults[FAULT_NUM_FAULTS];
  * Default function to be called on a fault assert , if none is set. This
  * will lock up the system and set the indicator light.
  */
-static void _fault_defaultOnAsert(tFaultData data) {
+static void _fault_defaultOnAsert(tFaultData data, uint32_t id) {
 	// TODO: add a call to put the system into a safe state
 
 //	for(;;); // Trap system
@@ -29,7 +29,7 @@ static void _fault_defaultOnAsert(tFaultData data) {
 /**
  * Default function to be called for a fault deassert. Does nothing.
  */
-static void _fault_defaultOnDeasert() {
+static void _fault_defaultOnDeasert(uint32_t id) {
 
 }
 
@@ -80,7 +80,7 @@ void fault_assert(uint32_t ui32FaultNum, tFaultData uData) {
 	tFaultHook *fh = &g_faults[ui32FaultNum]; // utility copy
 	if(!fh->bSet) {
 		fh->bSet = true;
-		fh->pfnOnAssert(uData);
+		fh->pfnOnAssert(uData, ui32FaultNum);
 		fh->uData = uData;
 		fh->ui32TSet = util_msTimestamp();
 	}
@@ -95,7 +95,7 @@ void fault_assert(uint32_t ui32FaultNum, tFaultData uData) {
 void fault_deassert(uint32_t ui32FaultNum) {
 	tFaultHook *fh = &g_faults[ui32FaultNum]; // utility copy
 	fh->bSet = false;
-	fh->pfnOnDeassert();
+	fh->pfnOnDeassert(ui32FaultNum);
 }
 
 
@@ -121,10 +121,12 @@ uint32_t fault_getFaultTime(uint32_t fault) {
 /**
  * Registers a set of handler functions for a certain fault number.
  */
-void fault_regHook(uint32_t faultNum, void (*pfnOnAssert)(tFaultData), void (*pfnOnDeassert)(void)) {
+void fault_regHook(uint32_t faultNum, void (*pfnOnAssert)(tFaultData, uint32_t), void (*pfnOnDeassert)(uint32_t)) {
 	tFaultHook *fh = &g_faults[faultNum]; // utility copy
 	fh->pfnOnAssert = pfnOnAssert;
 	fh->pfnOnDeassert = pfnOnDeassert;
+	fh->_id = faultNum;
+	fh->bSet = false;
 }
 
 
